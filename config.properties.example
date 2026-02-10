@@ -1,0 +1,62 @@
+# Configuration de la Base de Données
+# 
+# Ce fichier contient les paramètres de configuration pour la connexion MySQL
+# Copier ce fichier et ajuster les valeurs selon votre environnement
+
+# ============================================================================
+# CONFIGURATION MYSQL
+# ============================================================================
+
+# Host de la base de données
+DB_HOST=localhost
+
+# Port MySQL (par défaut 3306)
+DB_PORT=3306
+
+# Nom de la base de données
+DB_NAME=pharmacie_db
+
+# Utilisateur MySQL
+DB_USER=root
+
+# Mot de passe MySQL
+# ⚠️ IMPORTANT: Ne jamais commiter ce fichier avec le vrai mot de passe
+DB_PASSWORD=
+
+# URL complète de connexion JDBC
+# jdbc:mysql://HOST:PORT/DATABASE?useSSL=false&serverTimezone=UTC
+DB_URL=jdbc:mysql://localhost:3306/pharmacie_db
+
+# ============================================================================
+# PARAMÈTRES DE L'APPLICATION
+# ============================================================================
+
+# Titre de l'application
+APP_TITLE=SGPA - Système de Gestion Pharmacie Avancé
+
+# Version
+APP_VERSION=1.0.0
+
+# ============================================================================
+# NOTES D'INSTALLATION
+# ============================================================================
+#
+# 1. Créer la base de données:
+#    CREATE DATABASE pharmacie_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+#
+# 2. Importer le schéma:
+#    mysql -u root -p pharmacie_db < database/schema.sql
+#
+# 3. Modifier le fichier DatabaseConnection.java avec ces paramètres
+#
+# 4. Pour une meilleure sécurité en production:
+#    - Créer un utilisateur dédié (pas root)
+#    - Définir un mot de passe fort
+#    - Utiliser SSL pour la connexion
+#    - Limiter les privilèges de l'utilisateur
+#
+# Exemple de création d'utilisateur sécurisé:
+# CREATE USER 'pharmacie_user'@'localhost' IDENTIFIED BY 'MotDePasseComplexe123!';
+# GRANT SELECT, INSERT, UPDATE, DELETE ON pharmacie_db.* TO 'pharmacie_user'@'localhost';
+# FLUSH PRIVILEGES;
+#
