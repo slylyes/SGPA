@@ -6,6 +6,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 /**
@@ -22,35 +24,44 @@ public class LoginView {
 
     public void show() {
         VBox root = new VBox(20);
-        root.setPadding(new Insets(40));
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
+
+        // Carte de connexion
+        VBox card = StyleManager.createCard("");
+        card.setMaxWidth(400);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(40));
+        card.setSpacing(20);
 
         // Titre
         Label titre = new Label("Pharmacie Dauphine");
-        titre.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2196F3;");
+        titre.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.BOLD, 28));
+        titre.setStyle("-fx-text-fill: " + StyleManager.PRIMARY_COLOR + ";");
 
         Label sousTitre = new Label("Système de Gestion Pharmacie Avancé");
-        sousTitre.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+        sousTitre.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.NORMAL, 14));
+        sousTitre.setStyle("-fx-text-fill: " + StyleManager.TEXT_SECONDARY_COLOR + ";");
 
         // Formulaire
         GridPane form = new GridPane();
         form.setHgap(10);
         form.setVgap(15);
         form.setAlignment(Pos.CENTER);
-        form.setMaxWidth(400);
 
         Label lblLogin = new Label("Login:");
-        lblLogin.setStyle("-fx-font-size: 14px;");
+        lblLogin.setFont(Font.font(StyleManager.FONT_FAMILY, StyleManager.FONT_SIZE_NORMAL));
         TextField txtLogin = new TextField();
         txtLogin.setPromptText("Entrez votre login");
         txtLogin.setPrefWidth(250);
+        StyleManager.applyTextFieldStyle(txtLogin);
 
         Label lblPassword = new Label("Mot de passe:");
-        lblPassword.setStyle("-fx-font-size: 14px;");
+        lblPassword.setFont(Font.font(StyleManager.FONT_FAMILY, StyleManager.FONT_SIZE_NORMAL));
         PasswordField txtPassword = new PasswordField();
         txtPassword.setPromptText("Entrez votre mot de passe");
         txtPassword.setPrefWidth(250);
+        StyleManager.applyTextFieldStyle(txtPassword);
 
         form.add(lblLogin, 0, 0);
         form.add(txtLogin, 1, 0);
@@ -59,13 +70,11 @@ public class LoginView {
 
         // Bouton de connexion
         Button btnConnexion = new Button("Se connecter");
-        btnConnexion.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; " +
-                             "-fx-font-size: 14px; -fx-padding: 10 30;");
+        StyleManager.applyPrimaryButtonStyle(btnConnexion);
         btnConnexion.setPrefWidth(200);
 
         Label lblMessage = new Label();
-        lblMessage.setStyle("-fx-text-fill: red; -fx-font-size: 12px;");
-
+        lblMessage.setStyle("-fx-text-fill: " + StyleManager.DESTRUCTIVE_COLOR + "; -fx-font-size: 12px;");
 
         // Action du bouton
         btnConnexion.setOnAction(e -> {
@@ -88,11 +97,14 @@ public class LoginView {
 
         // Permettre la connexion avec la touche Entrée
         txtPassword.setOnAction(e -> btnConnexion.fire());
+        txtLogin.setOnAction(e -> txtPassword.requestFocus());
 
-        root.getChildren().addAll(titre, sousTitre, form, btnConnexion, lblMessage);
+        card.getChildren().addAll(titre, sousTitre, form, btnConnexion, lblMessage);
+        root.getChildren().add(card);
 
         Scene scene = new Scene(root, 600, 500);
         stage.setScene(scene);
+        stage.setTitle("Connexion - SGPA");
         stage.show();
     }
 }

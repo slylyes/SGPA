@@ -29,10 +29,13 @@ public class UtilisateurView {
 
     public void show() {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // En-tête
-        HBox header = createHeader();
+        HBox header = StyleManager.createHeader("Gestion des Utilisateurs", () -> {
+            MainMenuView mainMenu = new MainMenuView(stage);
+            mainMenu.show();
+        });
         root.setTop(header);
 
         // Toolbar
@@ -41,52 +44,32 @@ public class UtilisateurView {
 
         // Table
         table = createTable();
-        root.setCenter(table);
+        VBox tableContainer = new VBox(table);
+        tableContainer.setPadding(new Insets(20));
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        root.setCenter(tableContainer);
 
         // Charger les données
         chargerUtilisateurs();
 
         Scene scene = new Scene(root, 1000, 600);
         stage.setScene(scene);
+        stage.setTitle("Utilisateurs - SGPA");
         stage.show();
-    }
-
-    private HBox createHeader() {
-        HBox header = new HBox();
-        header.setPadding(new Insets(15, 20, 15, 20));
-        header.setStyle("-fx-background-color: #2196F3;");
-
-        Label titre = new Label("Gestion des Utilisateurs");
-        titre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
-
-        Button btnRetour = new Button("← Retour");
-        btnRetour.setStyle("-fx-background-color: white; -fx-text-fill: #2196F3;");
-        btnRetour.setOnAction(e -> {
-            MainMenuView mainMenu = new MainMenuView(stage);
-            mainMenu.show();
-        });
-
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-        header.getChildren().addAll(btnRetour, spacer1, titre, spacer2);
-        return header;
     }
 
     private HBox createToolbar() {
         HBox toolbar = new HBox(10);
-        toolbar.setPadding(new Insets(10, 20, 10, 20));
-        toolbar.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;");
+        toolbar.setPadding(new Insets(15, 20, 15, 20));
+        toolbar.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
 
         Button btnAjouter = new Button("Ajouter");
-        btnAjouter.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        StyleManager.applyPrimaryButtonStyle(btnAjouter);
         btnAjouter.setOnAction(e -> afficherFormulaireAjout());
 
         Button btnModifier = new Button("Modifier");
-        btnModifier.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white;");
+        StyleManager.applyWarningButtonStyle(btnModifier);
         btnModifier.setOnAction(e -> {
             Utilisateur selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -97,7 +80,7 @@ public class UtilisateurView {
         });
 
         Button btnSupprimer = new Button("Supprimer");
-        btnSupprimer.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        StyleManager.applyDestructiveButtonStyle(btnSupprimer);
         btnSupprimer.setOnAction(e -> {
             Utilisateur selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -108,6 +91,7 @@ public class UtilisateurView {
         });
 
         Button btnActualiser = new Button("Actualiser");
+        StyleManager.applySecondaryButtonStyle(btnActualiser);
         btnActualiser.setOnAction(e -> chargerUtilisateurs());
 
         Region spacer = new Region();
@@ -119,6 +103,7 @@ public class UtilisateurView {
 
     private TableView<Utilisateur> createTable() {
         TableView<Utilisateur> table = new TableView<>();
+        StyleManager.applyTableStyle(table);
         table.setItems(data);
 
         TableColumn<Utilisateur, Integer> colId = new TableColumn<>("ID");
@@ -157,6 +142,9 @@ public class UtilisateurView {
         Dialog<Utilisateur> dialog = new Dialog<>();
         dialog.setTitle("Ajouter un utilisateur");
 
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
+
         ButtonType btnValider = new ButtonType("Ajouter", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
 
@@ -183,6 +171,9 @@ public class UtilisateurView {
     private void afficherFormulaireModification(Utilisateur utilisateur) {
         Dialog<Utilisateur> dialog = new Dialog<>();
         dialog.setTitle("Modifier un utilisateur");
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         ButtonType btnValider = new ButtonType("Modifier", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
@@ -215,13 +206,21 @@ public class UtilisateurView {
         grid.setPadding(new Insets(20));
 
         TextField txtLogin = new TextField(utilisateur != null ? utilisateur.getLogin() : "");
+        StyleManager.applyTextFieldStyle(txtLogin);
+
         PasswordField txtPassword = new PasswordField();
+        StyleManager.applyTextFieldStyle(txtPassword);
         if (utilisateur != null) txtPassword.setText(utilisateur.getMotDePasse());
+
         TextField txtNom = new TextField(utilisateur != null ? utilisateur.getNom() : "");
+        StyleManager.applyTextFieldStyle(txtNom);
+
         TextField txtPrenom = new TextField(utilisateur != null ? utilisateur.getPrenom() : "");
+        StyleManager.applyTextFieldStyle(txtPrenom);
         
         ComboBox<Role> cmbRole = new ComboBox<>();
         cmbRole.getItems().addAll(Role.values());
+        cmbRole.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
         if (utilisateur != null) {
             cmbRole.setValue(utilisateur.getRole());
         } else {
