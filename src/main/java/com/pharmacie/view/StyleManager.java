@@ -30,6 +30,10 @@ public class StyleManager {
     public static final int FONT_SIZE_NORMAL = 14;
     public static final int FONT_SIZE_SMALL = 12;
 
+    // Nouveaux styles pour les tableaux et boutons
+    private static final int TABLE_ROW_HEIGHT = 40;
+    private static final int TABLE_FONT_SIZE = 14;
+
     // Styles CSS communs
     private static final String COMMON_BUTTON_STYLE =
         "-fx-font-family: '" + FONT_FAMILY + "'; " +
@@ -164,20 +168,86 @@ public class StyleManager {
     }
 
     /**
-     * Applique le style aux tables
+     * Applique un style amélioré aux tables (fines, modernes)
      */
     public static void applyTableStyle(TableView<?> table) {
-        table.setStyle(
+        // Base style
+        String style =
             "-fx-background-color: white; " +
             "-fx-border-color: #E0E0E0; " +
-            "-fx-border-radius: 5; " +
-            "-fx-background-radius: 5;"
-        );
+            "-fx-border-radius: 8; " +
+            "-fx-background-radius: 8; " +
+            "-fx-font-family: '" + FONT_FAMILY + "'; " +
+            "-fx-font-size: " + TABLE_FONT_SIZE + "px; " +
+            "-fx-base: white; " +
+            "-fx-control-inner-background: white; " +
+            "-fx-control-inner-background-alt: #F1F8E9; " + // Alternance vert très clair
+            "-fx-table-cell-border-color: transparent; " +   // Supprime les lignes verticales
+            "-fx-table-header-border-color: transparent; " +
+            "-fx-padding: 5;";
+
+        table.setStyle(style);
+
+        // Configuration de la hauteur des lignes
+        table.setFixedCellSize(TABLE_ROW_HEIGHT);
+
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        // Note: Le style interne des cellules (couleur de sélection, header)
-        // nécessiterait un fichier CSS externe pour être parfait,
-        // mais on peut configurer quelques propriétés ici si besoin.
+        // Placeholder moderne
+        Label placeholder = new Label("Aucune donnée disponible");
+        placeholder.setFont(Font.font(FONT_FAMILY, 16));
+        placeholder.setStyle("-fx-text-fill: " + TEXT_SECONDARY_COLOR + ";");
+        table.setPlaceholder(placeholder);
+    }
+
+    /**
+     * Crée un gros bouton de menu moderne
+     */
+    public static Button createLargeMenuButton(String title, String description) {
+        Button button = new Button();
+        button.setPrefSize(300, 180);
+
+        VBox content = new VBox(10);
+        content.setAlignment(Pos.CENTER);
+
+        Label lblTitle = new Label(title);
+        lblTitle.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 18));
+        lblTitle.setStyle("-fx-text-fill: " + PRIMARY_COLOR + ";");
+        lblTitle.setWrapText(true);
+        lblTitle.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        Label lblDesc = new Label(description);
+        lblDesc.setFont(Font.font(FONT_FAMILY, FontWeight.NORMAL, 12));
+        lblDesc.setStyle("-fx-text-fill: " + TEXT_SECONDARY_COLOR + ";");
+        lblDesc.setWrapText(true);
+        lblDesc.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        content.getChildren().addAll(lblTitle, lblDesc);
+        button.setGraphic(content);
+
+        // Style du bouton
+        String baseStyle =
+            "-fx-background-color: white; " +
+            "-fx-background-radius: 15; " +
+            "-fx-border-radius: 15; " +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5); " +
+            "-fx-cursor: hand;";
+
+        button.setStyle(baseStyle);
+
+        // Animation hover
+        button.setOnMouseEntered(e -> {
+            button.setStyle(baseStyle + "-fx-background-color: " + SECONDARY_COLOR + "; " +
+                          "-fx-scale-x: 1.05; -fx-scale-y: 1.05;");
+            lblTitle.setStyle("-fx-text-fill: #1B5E20;"); // Vert plus foncé au survol
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setStyle(baseStyle);
+            lblTitle.setStyle("-fx-text-fill: " + PRIMARY_COLOR + ";");
+        });
+
+        return button;
     }
 
     /**
@@ -189,7 +259,7 @@ public class StyleManager {
         card.setStyle(
             "-fx-background-color: " + WHITE_COLOR + "; " +
             "-fx-background-radius: 10; " +
-            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);"
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);"
         );
 
         if (title != null && !title.isEmpty()) {
