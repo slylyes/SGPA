@@ -148,18 +148,25 @@ public class MainMenuView {
         );
         btnUtilisateurs.setOnAction(e -> safeShow(() -> new UtilisateurView(stage).show()));
 
+        Button btnRapports = StyleManager.createLargeMenuButton(
+            "Rapports",
+            "Rapports financiers, ventes par mois et export PDF/Excel"
+        );
+        btnRapports.setOnAction(e -> safeShow(() -> new RapportView(stage).show()));
+
         // Désactiver certains boutons pour les préparateurs
         if (!SessionManager.getInstance().estPharmacien()) {
             btnFournisseurs.setDisable(true);
             btnUtilisateurs.setDisable(true);
             btnCommandes.setDisable(true);
+            btnRapports.setDisable(true);
 
             // Layout différent pour Préparateur (moins de boutons)
             grid.add(btnMedicaments, 0, 0);
             grid.add(btnVentes, 1, 0);
             grid.add(btnAlertes, 2, 0);
         } else {
-            // Layout complet pour Pharmacien (3x2)
+            // Layout complet pour Pharmacien (3x3)
             grid.add(btnMedicaments, 0, 0);
             grid.add(btnVentes, 1, 0);
             grid.add(btnAlertes, 2, 0);
@@ -167,6 +174,8 @@ public class MainMenuView {
             grid.add(btnCommandes, 0, 1);
             grid.add(btnFournisseurs, 1, 1);
             grid.add(btnUtilisateurs, 2, 1);
+
+            grid.add(btnRapports, 0, 2);
         }
 
         menu.getChildren().addAll(welcomeBox, grid);
