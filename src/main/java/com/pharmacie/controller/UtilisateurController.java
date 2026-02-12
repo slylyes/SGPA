@@ -63,6 +63,16 @@ public class UtilisateurController {
             return false;
         }
 
+        // Vérification de doublon de login (actifs uniquement)
+        int loginStatus = utilisateurDAO.loginExiste(utilisateur.getLogin(), -1);
+        if (loginStatus == 1) {
+            System.err.println("DOUBLON_ACTIF");
+            return false;
+        } else if (loginStatus == 2) {
+            // Login pris par un archivé : recycler l'ancien enregistrement
+            return utilisateurDAO.recyclerArchive(utilisateur.getLogin(), utilisateur);
+        }
+
         return utilisateurDAO.creer(utilisateur);
     }
 
@@ -74,6 +84,27 @@ public class UtilisateurController {
             System.err.println("Action réservée au pharmacien");
             return false;
         }
+
+        // Validation des champs
+        if (utilisateur.getLogin() == null || utilisateur.getLogin().trim().isEmpty()) {
+            System.err.println("Le login est obligatoire");
+            return false;
+        }
+        if (utilisateur.getMotDePasse() == null || utilisateur.getMotDePasse().length() < 6) {
+            System.err.println("Le mot de passe doit contenir au moins 6 caractères");
+            return false;
+        }
+
+        // Vérification de doublon de login (exclure l'utilisateur en cours de modification)
+        int loginStatus = utilisateurDAO.loginExiste(utilisateur.getLogin(), utilisateur.getId());
+        if (loginStatus == 1) {
+            System.err.println("DOUBLON_ACTIF");
+            return false;
+        } else if (loginStatus == 2) {
+            System.err.println("DOUBLON_ARCHIVE");
+            return false;
+        }
+
         return utilisateurDAO.mettreAJour(utilisateur);
     }
 
@@ -104,6 +135,14 @@ public class UtilisateurController {
             return null;
         }
         return utilisateurDAO.lireTous();
+    }
+
+    /**
+     * Vérifie si un login est déjà pris (pour affichage dans la vue)
+     * @return 0=libre, 1=pris par actif, 2=pris par archivé
+     */
+    public int verifierLogin(String login, int idExclu) {
+        return utilisateurDAO.loginExiste(login, idExclu);
     }
 
     /**

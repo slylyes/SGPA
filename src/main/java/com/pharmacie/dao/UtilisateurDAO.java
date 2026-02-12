@@ -177,6 +177,54 @@ public class UtilisateurDAO {
     }
 
     /**
+     * Recycle un utilisateur archivé : met à jour ses infos et le réactive
+     * @param login le login de l'utilisateur archivé à recycler
+     * @param utilisateur les nouvelles données à appliquer
+     * @return true si le recyclage a réussi
+     */
+    public boolean recyclerArchive(String login, Utilisateur utilisateur) {
+        String sql = "UPDATE utilisateur SET mot_de_passe = ?, nom = ?, prenom = ?, role = ?, actif = TRUE WHERE login = ? AND actif = FALSE";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, utilisateur.getMotDePasse());
+            stmt.setString(2, utilisateur.getNom());
+            stmt.setString(3, utilisateur.getPrenom());
+            stmt.setString(4, utilisateur.getRole().name());
+            stmt.setString(5, login);
+            
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Erreur lors du recyclage de l'utilisateur archivé : " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Vérifie si un login existe déjà en base (actifs ET archivés)
+     * car la contrainte UNIQUE s'applique à tous les enregistrements.
+     * @param login le login à vérifier
+     * @param idExclu l'ID de l'utilisateur à exclure (pour la modification), ou -1 pour ignorer
+     * @return 0 si le login est libre, 1 si pris par un utilisateur actif, 2 si pris par un archivé
+     */
+    public int loginExiste(String login, int idExclu) {
+        String sql = "SELECT id, actif FROM utilisateur WHERE login = ? AND id != ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, login);
+            stmt.setInt(2, idExclu);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBoolean("actif") ? 1 : 2;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la vérification du login : " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
      * Extrait un objet Utilisateur depuis un ResultSet
      */
     private Utilisateur extraireUtilisateur(ResultSet rs) throws SQLException {

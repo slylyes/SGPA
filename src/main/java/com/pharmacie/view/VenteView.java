@@ -219,6 +219,14 @@ public class VenteView {
             showAlert(Alert.AlertType.ERROR, "La quantité doit être supérieure à 0");
             return;
         }
+
+        // Vérification de la date de péremption
+        if (medicament.getDatePeremption().isBefore(java.time.LocalDate.now())) {
+            showAlert(Alert.AlertType.ERROR, 
+                "VENTE INTERDITE : Le médicament \"" + medicament.getNomCommercial() + 
+                "\" est périmé depuis le " + medicament.getDatePeremption() + " !");
+            return;
+        }
         
         if (medicament.getStockActuel() < quantite) {
             showAlert(Alert.AlertType.ERROR, "Stock insuffisant ! Disponible: " + medicament.getStockActuel());
@@ -261,6 +269,22 @@ public class VenteView {
     private boolean validerVente(boolean avecOrdonnance) {
         if (panierData.isEmpty()) {
             showAlert(Alert.AlertType.WARNING, "Le panier est vide");
+            return false;
+        }
+
+        // Vérifier la péremption des médicaments
+        List<String> medicamentsPerimes = new ArrayList<>();
+        for (LigneVente ligne : panierData) {
+            Medicament med = medicamentController.getMedicamentParId(ligne.getIdMedicament());
+            if (med != null && med.getDatePeremption().isBefore(java.time.LocalDate.now())) {
+                medicamentsPerimes.add(med.getNomCommercial() + " (périmé le " + med.getDatePeremption() + ")");
+            }
+        }
+        if (!medicamentsPerimes.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR,
+                "VENTE INTERDITE : Les médicaments suivants sont périmés :\n" +
+                String.join("\n", medicamentsPerimes) +
+                "\n\nRetirez-les du panier avant de valider.");
             return false;
         }
 

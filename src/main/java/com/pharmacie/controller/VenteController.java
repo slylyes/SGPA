@@ -29,9 +29,18 @@ public class VenteController {
             return false;
         }
 
-        // Vérifier le stock pour chaque médicament
+        // Vérifier le stock et la péremption pour chaque médicament
         for (LigneVente ligne : vente.getLignesVente()) {
-            if (!verifierStockDisponible(ligne.getIdMedicament(), ligne.getQuantite())) {
+            Medicament medicament = medicamentController.getMedicamentParId(ligne.getIdMedicament());
+            if (medicament == null) {
+                System.err.println("Médicament introuvable : " + ligne.getNomMedicament());
+                return false;
+            }
+            if (medicament.getDatePeremption().isBefore(java.time.LocalDate.now())) {
+                System.err.println("Médicament périmé (date : " + medicament.getDatePeremption() + ") : " + ligne.getNomMedicament());
+                return false;
+            }
+            if (medicament.getStockActuel() < ligne.getQuantite()) {
                 System.err.println("Stock insuffisant pour : " + ligne.getNomMedicament());
                 return false;
             }
@@ -51,13 +60,7 @@ public class VenteController {
         return false;
     }
 
-    /**
-     * Vérifie si le stock est disponible pour une quantité donnée
-     */
-    private boolean verifierStockDisponible(int idMedicament, int quantite) {
-        Medicament medicament = medicamentController.getMedicamentParId(idMedicament);
-        return medicament != null && medicament.getStockActuel() >= quantite;
-    }
+
 
     /**
      * Récupère toutes les ventes

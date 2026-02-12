@@ -159,11 +159,35 @@ public class UtilisateurView {
         });
 
         dialog.showAndWait().ifPresent(utilisateur -> {
+            if (utilisateur.getLogin() == null || utilisateur.getLogin().trim().isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Le login est obligatoire");
+                return;
+            }
+            if (utilisateur.getMotDePasse() == null || utilisateur.getMotDePasse().length() < 6) {
+                showAlert(Alert.AlertType.ERROR, "Le mot de passe doit contenir au moins 6 caractères");
+                return;
+            }
+            // Vérifier le login avant d'appeler le contrôleur pour un message précis
+            int loginStatus = controller.verifierLogin(utilisateur.getLogin(), -1);
+            if (loginStatus == 1) {
+                showAlert(Alert.AlertType.ERROR, "Le login \"" + utilisateur.getLogin() + "\" est déjà utilisé par un utilisateur actif.");
+                return;
+            } else if (loginStatus == 2) {
+                // Demander confirmation pour réutiliser le login archivé
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                confirm.setTitle("Login archivé détecté");
+                confirm.setHeaderText("Le login \"" + utilisateur.getLogin() + "\" appartient à un utilisateur archivé.");
+                confirm.setContentText("Voulez-vous remplacer l'ancien compte par ce nouvel utilisateur ?");
+                var result = confirm.showAndWait();
+                if (result.isEmpty() || result.get() != ButtonType.OK) {
+                    return;
+                }
+            }
             if (controller.ajouterUtilisateur(utilisateur)) {
                 showAlert(Alert.AlertType.INFORMATION, "Utilisateur ajouté avec succès");
                 chargerUtilisateurs();
             } else {
-                showAlert(Alert.AlertType.ERROR, "Erreur lors de l'ajout");
+                showAlert(Alert.AlertType.ERROR, "Erreur lors de l'ajout de l'utilisateur.");
             }
         });
     }
@@ -190,11 +214,28 @@ public class UtilisateurView {
 
         dialog.showAndWait().ifPresent(u -> {
             u.setId(utilisateur.getId());
+            if (u.getLogin() == null || u.getLogin().trim().isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Le login est obligatoire");
+                return;
+            }
+            if (u.getMotDePasse() == null || u.getMotDePasse().length() < 6) {
+                showAlert(Alert.AlertType.ERROR, "Le mot de passe doit contenir au moins 6 caractères");
+                return;
+            }
+            // Vérifier le login avant d'appeler le contrôleur pour un message précis
+            int loginStatus = controller.verifierLogin(u.getLogin(), u.getId());
+            if (loginStatus == 1) {
+                showAlert(Alert.AlertType.ERROR, "Le login \"" + u.getLogin() + "\" est déjà utilisé par un autre utilisateur actif.");
+                return;
+            } else if (loginStatus == 2) {
+                showAlert(Alert.AlertType.ERROR, "Le login \"" + u.getLogin() + "\" est déjà utilisé par un utilisateur archivé.\n\nRéactivez-le depuis la gestion des archives ou choisissez un autre login.");
+                return;
+            }
             if (controller.modifierUtilisateur(u)) {
                 showAlert(Alert.AlertType.INFORMATION, "Utilisateur modifié avec succès");
                 chargerUtilisateurs();
             } else {
-                showAlert(Alert.AlertType.ERROR, "Erreur lors de la modification");
+                showAlert(Alert.AlertType.ERROR, "Erreur lors de la modification de l'utilisateur.");
             }
         });
     }

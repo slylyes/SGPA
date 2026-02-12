@@ -57,7 +57,6 @@ public class Vente {
 
     public void setLignesVente(List<LigneVente> lignesVente) {
         this.lignesVente = lignesVente;
-        calculerMontantTotal();
     }
 
     public double getMontantTotal() {
