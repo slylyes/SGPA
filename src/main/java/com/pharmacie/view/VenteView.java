@@ -77,24 +77,66 @@ public class VenteView {
     private VBox createSelectionMedicaments() {
         VBox box = StyleManager.createCard("Sélection des Médicaments");
 
-        TextField txtRecherche = new TextField();
-        txtRecherche.setPromptText("Rechercher un médicament...");
-        StyleManager.applyTextFieldStyle(txtRecherche);
-
+        // ComboBox recherchable unique (tapez pour filtrer)
         ComboBox<Medicament> cmbMedicaments = new ComboBox<>();
-        cmbMedicaments.setPromptText("Sélectionner un médicament");
+        cmbMedicaments.setEditable(true);
+        cmbMedicaments.setPromptText("Tapez pour rechercher un médicament...");
         cmbMedicaments.setMaxWidth(Double.MAX_VALUE);
-        cmbMedicaments.getItems().addAll(medicamentController.getTousMedicaments());
         cmbMedicaments.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
-        txtRecherche.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.isEmpty()) {
-                cmbMedicaments.getItems().clear();
-                cmbMedicaments.getItems().addAll(medicamentController.getTousMedicaments());
-            } else {
-                cmbMedicaments.getItems().clear();
-                cmbMedicaments.getItems().addAll(medicamentController.rechercherMedicaments(newVal));
+        ObservableList<Medicament> tousLesMedicaments = FXCollections.observableArrayList(
+            medicamentController.getTousMedicaments()
+        );
+        cmbMedicaments.setItems(tousLesMedicaments);
+
+        // Affichage détaillé dans la liste déroulante
+        cmbMedicaments.setCellFactory(lv -> new ListCell<Medicament>() {
+            @Override
+            protected void updateItem(Medicament item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null :
+                    item.getNomCommercial() + "  (" + String.format("%.2f €", item.getPrixPublic()) +
+                    " | Stock: " + item.getStockActuel() + ")");
             }
+        });
+
+        // Conversion texte ↔ objet
+        cmbMedicaments.setConverter(new javafx.util.StringConverter<Medicament>() {
+            @Override
+            public String toString(Medicament med) {
+                return med == null ? "" : med.getNomCommercial();
+            }
+            @Override
+            public Medicament fromString(String s) {
+                if (s == null || s.isEmpty()) return null;
+                return tousLesMedicaments.stream()
+                    .filter(m -> m.getNomCommercial().equalsIgnoreCase(s))
+                    .findFirst().orElse(null);
+            }
+        });
+
+        // Filtrage dynamique en tapant
+        cmbMedicaments.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+            Medicament selected = cmbMedicaments.getSelectionModel().getSelectedItem();
+            if (selected != null && selected.getNomCommercial().equals(newVal)) return;
+
+            javafx.application.Platform.runLater(() -> {
+                if (newVal == null || newVal.isEmpty()) {
+                    cmbMedicaments.setItems(tousLesMedicaments);
+                } else {
+                    ObservableList<Medicament> filtre = FXCollections.observableArrayList();
+                    String recherche = newVal.toLowerCase();
+                    for (Medicament m : tousLesMedicaments) {
+                        if (m.getNomCommercial().toLowerCase().contains(recherche)) {
+                            filtre.add(m);
+                        }
+                    }
+                    cmbMedicaments.setItems(filtre);
+                }
+                if (!cmbMedicaments.isShowing()) {
+                    cmbMedicaments.show();
+                }
+            });
         });
 
         Label lblStock = new Label("Stock disponible: -");
@@ -110,7 +152,6 @@ public class VenteView {
         Spinner<Integer> spinQuantite = new Spinner<>(1, 100, 1);
         spinQuantite.setEditable(true);
         spinQuantite.setPrefWidth(100);
-        // Style spinner slightly tricky but can apply font
         spinQuantite.getEditor().setFont(Font.font(StyleManager.FONT_FAMILY, 14));
 
         Button btnAjouter = new Button("Ajouter au panier");
@@ -121,6 +162,8 @@ public class VenteView {
             if (selected != null) {
                 ajouterAuPanier(selected, spinQuantite.getValue());
                 cmbMedicaments.setValue(null);
+                cmbMedicaments.getEditor().clear();
+                cmbMedicaments.setItems(tousLesMedicaments);
                 spinQuantite.getValueFactory().setValue(1);
                 lblStock.setText("Stock disponible: -");
             } else {
@@ -137,7 +180,7 @@ public class VenteView {
         form.add(new Label("Quantité:"), 0, 2);
         form.add(spinQuantite, 1, 2);
 
-        box.getChildren().addAll(txtRecherche, form, new Separator(), btnAjouter);
+        box.getChildren().addAll(form, new Separator(), btnAjouter);
         return box;
     }
 

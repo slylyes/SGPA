@@ -110,18 +110,29 @@ public class AlerteView {
 
         table.getColumns().addAll(colId, colNom, colStock, colSeuil, colStatut);
 
-        // Colorier les lignes selon le niveau d'alerte
+        // Colorier les lignes selon le niveau d'alerte (avec sélection visible)
         table.setRowFactory(tv -> new TableRow<Medicament>() {
+            {
+                selectedProperty().addListener((obs, old, sel) -> updateRowStyle());
+            }
+
+            private void updateRowStyle() {
+                Medicament item = getItem();
+                if (item == null || isEmpty()) {
+                    setStyle("");
+                } else if (isSelected()) {
+                    setStyle("-fx-background-color: " + StyleManager.SECONDARY_COLOR + ";");
+                } else if (item.getStockActuel() == 0) {
+                    setStyle("-fx-background-color: #ffebee;");
+                } else {
+                    setStyle("-fx-background-color: #fff8e1;");
+                }
+            }
+
             @Override
             protected void updateItem(Medicament item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item == null || empty) {
-                    setStyle("");
-                } else if (item.getStockActuel() == 0) {
-                    setStyle("-fx-background-color: #ffebee;");  // Very light red
-                } else {
-                    setStyle("-fx-background-color: #fff8e1;");  // Very light orange
-                }
+                updateRowStyle();
             }
         });
 
@@ -192,26 +203,36 @@ public class AlerteView {
 
         table.getColumns().addAll(colId, colNom, colStock, colPeremption, colJoursRestants);
 
-        // Colorier les lignes selon l'urgence
+        // Colorier les lignes selon l'urgence (avec sélection visible)
         table.setRowFactory(tv -> new TableRow<Medicament>() {
+            {
+                selectedProperty().addListener((obs, old, sel) -> updateRowStyle());
+            }
+
+            private void updateRowStyle() {
+                Medicament item = getItem();
+                if (item == null || isEmpty()) {
+                    setStyle("");
+                } else if (isSelected()) {
+                    setStyle("-fx-background-color: " + StyleManager.SECONDARY_COLOR + ";");
+                } else {
+                    long jours = java.time.temporal.ChronoUnit.DAYS.between(
+                        LocalDate.now(), item.getDatePeremption()
+                    );
+                    if (jours < 0) {
+                        setStyle("-fx-background-color: #ef9a9a;");
+                    } else if (jours < 30) {
+                        setStyle("-fx-background-color: #ffebee;");
+                    } else {
+                        setStyle("-fx-background-color: #fff8e1;");
+                    }
+                }
+            }
+
             @Override
             protected void updateItem(Medicament item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item == null || empty) {
-                    setStyle("");
-                } else {
-                    long jours = java.time.temporal.ChronoUnit.DAYS.between(
-                        LocalDate.now(), 
-                        item.getDatePeremption()
-                    );
-                    if (jours < 0) {
-                        setStyle("-fx-background-color: #ef9a9a;");  // Red
-                    } else if (jours < 30) {
-                        setStyle("-fx-background-color: #ffebee;");  // Light Red
-                    } else {
-                        setStyle("-fx-background-color: #fff8e1;");  // Light Orange
-                    }
-                }
+                updateRowStyle();
             }
         });
 

@@ -87,26 +87,6 @@ public class UtilisateurDAO {
     }
 
     /**
-     * Récupère un utilisateur par son ID
-     */
-    public Utilisateur lireParId(int id) {
-        String sql = "SELECT * FROM utilisateur WHERE id = ?";
-        
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return extraireUtilisateur(rs);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture de l'utilisateur : " + e.getMessage());
-        }
-        return null;
-    }
-
-    /**
      * Met à jour un utilisateur
      */
     public boolean mettreAJour(Utilisateur utilisateur) {
@@ -142,40 +122,6 @@ public class UtilisateurDAO {
         return false;
     }
     
-    /**
-     * Réactive un utilisateur archivé
-     */
-    public boolean reactiver(int id) {
-        String sql = "UPDATE utilisateur SET actif = TRUE WHERE id = ?";
-        
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la réactivation de l'utilisateur : " + e.getMessage());
-        }
-        return false;
-    }
-    
-    /**
-     * Récupère tous les utilisateurs archivés
-     */
-    public List<Utilisateur> lireTousArchives() {
-        List<Utilisateur> utilisateurs = new ArrayList<>();
-        String sql = "SELECT * FROM utilisateur WHERE actif = FALSE ORDER BY nom, prenom";
-        
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                utilisateurs.add(extraireUtilisateur(rs));
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture des utilisateurs archivés : " + e.getMessage());
-        }
-        return utilisateurs;
-    }
-
     /**
      * Recycle un utilisateur archivé : met à jour ses infos et le réactive
      * @param login le login de l'utilisateur archivé à recycler

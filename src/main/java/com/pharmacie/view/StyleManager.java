@@ -25,10 +25,8 @@ public class StyleManager {
 
     // Polices
     public static final String FONT_FAMILY = "Segoe UI, Helvetica, Arial, sans-serif";
-    public static final int FONT_SIZE_TITLE = 24;
     public static final int FONT_SIZE_HEADER = 20;
     public static final int FONT_SIZE_NORMAL = 14;
-    public static final int FONT_SIZE_SMALL = 12;
 
     // Nouveaux styles pour les tableaux et boutons
     private static final int TABLE_ROW_HEIGHT = 40;
@@ -179,7 +177,6 @@ public class StyleManager {
             "-fx-background-radius: 8; " +
             "-fx-font-family: '" + FONT_FAMILY + "'; " +
             "-fx-font-size: " + TABLE_FONT_SIZE + "px; " +
-            "-fx-base: white; " +
             "-fx-control-inner-background: white; " +
             "-fx-control-inner-background-alt: #F1F8E9; " + // Alternance vert très clair
             "-fx-table-cell-border-color: transparent; " +   // Supprime les lignes verticales
@@ -271,16 +268,6 @@ public class StyleManager {
         }
 
         return card;
-    }
-
-    /**
-     * Crée un label de titre standard
-     */
-    public static Label createTitleLabel(String text) {
-        Label label = new Label(text);
-        label.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, FONT_SIZE_TITLE));
-        label.setStyle("-fx-text-fill: " + PRIMARY_COLOR + ";");
-        return label;
     }
 
     /**

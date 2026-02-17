@@ -29,7 +29,7 @@ public class LoginView {
 
         // Carte de connexion
         VBox card = StyleManager.createCard("");
-        card.setMaxWidth(400);
+        card.setMaxWidth(450);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(40));
         card.setSpacing(20);
@@ -51,6 +51,7 @@ public class LoginView {
 
         Label lblLogin = new Label("Login:");
         lblLogin.setFont(Font.font(StyleManager.FONT_FAMILY, StyleManager.FONT_SIZE_NORMAL));
+        lblLogin.setMinWidth(Region.USE_PREF_SIZE);
         TextField txtLogin = new TextField();
         txtLogin.setPromptText("Entrez votre login");
         txtLogin.setPrefWidth(250);
@@ -58,6 +59,7 @@ public class LoginView {
 
         Label lblPassword = new Label("Mot de passe:");
         lblPassword.setFont(Font.font(StyleManager.FONT_FAMILY, StyleManager.FONT_SIZE_NORMAL));
+        lblPassword.setMinWidth(Region.USE_PREF_SIZE);
         PasswordField txtPassword = new PasswordField();
         txtPassword.setPromptText("Entrez votre mot de passe");
         txtPassword.setPrefWidth(250);

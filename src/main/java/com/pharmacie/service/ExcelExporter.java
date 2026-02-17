@@ -13,9 +13,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Service d'export des rapports financiers au format Excel (.xlsx)
- */
+
 public class ExcelExporter {
 
     /**

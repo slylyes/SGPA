@@ -1,6 +1,7 @@
 package com.pharmacie.view;
 
 import com.pharmacie.controller.MedicamentController;
+import com.pharmacie.controller.SessionManager;
 import com.pharmacie.model.Medicament;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -109,7 +110,11 @@ public class MedicamentView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        toolbar.getChildren().addAll(txtRecherche, spacer, btnAjouter, btnModifier, btnSupprimer, btnActualiser);
+        toolbar.getChildren().addAll(txtRecherche, spacer);
+        if (SessionManager.getInstance().estPharmacien()) {
+            toolbar.getChildren().addAll(btnAjouter, btnModifier, btnSupprimer);
+        }
+        toolbar.getChildren().add(btnActualiser);
         return toolbar;
     }
 

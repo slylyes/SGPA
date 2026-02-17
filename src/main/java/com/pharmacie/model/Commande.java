@@ -4,9 +4,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Classe représentant une commande fournisseur
- */
 public class Commande {
     private int id;
     private int idFournisseur;

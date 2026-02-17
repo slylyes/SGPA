@@ -4,12 +4,9 @@ import com.pharmacie.dao.VenteDAO;
 import com.pharmacie.model.LigneVente;
 import com.pharmacie.model.Medicament;
 import com.pharmacie.model.Vente;
-import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Contrôleur pour la gestion des ventes
- */
+
 public class VenteController {
     private VenteDAO venteDAO;
     private MedicamentController medicamentController;
@@ -19,9 +16,7 @@ public class VenteController {
         this.medicamentController = new MedicamentController();
     }
 
-    /**
-     * Enregistre une nouvelle vente
-     */
+ 
     public boolean enregistrerVente(Vente vente) {
         // Validation
         if (vente.getLignesVente() == null || vente.getLignesVente().isEmpty()) {
@@ -60,40 +55,8 @@ public class VenteController {
         return false;
     }
 
-
-
-    /**
-     * Récupère toutes les ventes
-     */
+   
     public List<Vente> getToutesVentes() {
         return venteDAO.lireTous();
-    }
-
-    /**
-     * Récupère une vente par son ID
-     */
-    public Vente getVenteParId(int id) {
-        return venteDAO.lireParId(id);
-    }
-
-    /**
-     * Récupère les ventes d'une période
-     */
-    public List<Vente> getVentesParPeriode(LocalDateTime debut, LocalDateTime fin) {
-        return venteDAO.lireParPeriode(debut, fin);
-    }
-
-    /**
-     * Calcule le chiffre d'affaires total
-     */
-    public double getChiffreAffaires() {
-        return venteDAO.getChiffreAffaires();
-    }
-
-    /**
-     * Calcule le nombre total de ventes
-     */
-    public int getNombreVentes() {
-        return venteDAO.lireTous().size();
     }
 }

@@ -24,43 +24,6 @@ public class RapportDAO {
     }
 
     /**
-     * Récupère les ventes agrégées par mois pour une année donnée
-     */
-    public List<RapportVente> getVentesParMois(int annee) {
-        List<RapportVente> rapports = new ArrayList<>();
-        String sql = "SELECT YEAR(v.date_heure) as annee, MONTH(v.date_heure) as mois, " +
-                     "COUNT(DISTINCT v.id) as nombre_ventes, " +
-                     "COALESCE(SUM(v.montant_total), 0) as chiffre_affaires, " +
-                     "COALESCE(SUM(lv.quantite), 0) as quantite_totale " +
-                     "FROM vente v " +
-                     "LEFT JOIN ligne_vente lv ON v.id = lv.id_vente " +
-                     "WHERE YEAR(v.date_heure) = ? " +
-                     "GROUP BY YEAR(v.date_heure), MONTH(v.date_heure) " +
-                     "ORDER BY mois";
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, annee);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    int mois = rs.getInt("mois");
-                    rapports.add(new RapportVente(
-                        rs.getInt("annee"),
-                        mois,
-                        MOIS_FR[mois],
-                        rs.getInt("nombre_ventes"),
-                        rs.getDouble("chiffre_affaires"),
-                        rs.getInt("quantite_totale")
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la génération du rapport mensuel : " + e.getMessage());
-        }
-        return rapports;
-    }
-
-    /**
      * Récupère les ventes agrégées par mois entre deux dates
      */
     public List<RapportVente> getVentesParMoisEntreDates(LocalDate debut, LocalDate fin) {
@@ -179,28 +142,5 @@ public class RapportDAO {
             System.err.println("Erreur lors du comptage des ventes : " + e.getMessage());
         }
         return 0;
-    }
-
-    /**
-     * Récupère les années disponibles dans les ventes
-     */
-    public List<Integer> getAnneesDisponibles() {
-        List<Integer> annees = new ArrayList<>();
-        String sql = "SELECT DISTINCT YEAR(date_heure) as annee FROM vente ORDER BY annee DESC";
-
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                annees.add(rs.getInt("annee"));
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la récupération des années : " + e.getMessage());
-        }
-        // Si aucune vente, ajouter l'année courante
-        if (annees.isEmpty()) {
-            annees.add(LocalDate.now().getYear());
-        }
-        return annees;
     }
 }

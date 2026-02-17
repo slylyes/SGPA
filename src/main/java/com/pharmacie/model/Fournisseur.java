@@ -1,12 +1,10 @@
 package com.pharmacie.model;
 
-/**
- * Classe représentant un fournisseur
- */
+
 public class Fournisseur {
     private int id;
     private String nom;
-    private String contact;  // Téléphone ou email
+    private String contact;  
     private String adresse;
     private boolean actif;
 

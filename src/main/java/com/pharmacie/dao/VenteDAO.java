@@ -3,13 +3,10 @@ package com.pharmacie.dao;
 import com.pharmacie.model.Vente;
 import com.pharmacie.model.LigneVente;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO pour la gestion des ventes en base de données
- */
+
 public class VenteDAO {
     private Connection connection;
 
@@ -17,9 +14,7 @@ public class VenteDAO {
         this.connection = DatabaseConnection.getInstance().getConnection();
     }
 
-    /**
-     * Crée une nouvelle vente avec ses lignes
-     */
+    
     public boolean creer(Vente vente) {
         String sqlVente = "INSERT INTO vente (date_heure, avec_ordonnance, montant_total, id_utilisateur) VALUES (?, ?, ?, ?)";
         String sqlLigne = "INSERT INTO ligne_vente (id_vente, id_medicament, quantite, prix_unitaire, sous_total) VALUES (?, ?, ?, ?, ?)";
@@ -76,9 +71,7 @@ public class VenteDAO {
         return false;
     }
 
-    /**
-     * Récupère toutes les ventes
-     */
+   
     public List<Vente> lireTous() {
         List<Vente> ventes = new ArrayList<>();
         String sql = "SELECT * FROM vente ORDER BY date_heure DESC";
@@ -97,31 +90,7 @@ public class VenteDAO {
         return ventes;
     }
 
-    /**
-     * Récupère une vente par son ID avec ses lignes
-     */
-    public Vente lireParId(int id) {
-        String sql = "SELECT * FROM vente WHERE id = ?";
-        
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    Vente vente = extraireVente(rs);
-                    vente.setLignesVente(lireLignesVente(id));
-                    return vente;
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture de la vente : " + e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * Récupère les lignes d'une vente
-     */
+   
     private List<LigneVente> lireLignesVente(int idVente) {
         List<LigneVente> lignes = new ArrayList<>();
         String sql = "SELECT lv.*, m.nom_commercial FROM ligne_vente lv " +
@@ -149,51 +118,7 @@ public class VenteDAO {
         return lignes;
     }
 
-    /**
-     * Récupère les ventes d'une période
-     */
-    public List<Vente> lireParPeriode(LocalDateTime debut, LocalDateTime fin) {
-        List<Vente> ventes = new ArrayList<>();
-        String sql = "SELECT * FROM vente WHERE date_heure BETWEEN ? AND ? ORDER BY date_heure DESC";
-        
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setTimestamp(1, Timestamp.valueOf(debut));
-            stmt.setTimestamp(2, Timestamp.valueOf(fin));
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Vente vente = extraireVente(rs);
-                    vente.setLignesVente(lireLignesVente(vente.getId()));
-                    ventes.add(vente);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture des ventes par période : " + e.getMessage());
-        }
-        return ventes;
-    }
-
-    /**
-     * Calcule le chiffre d'affaires total
-     */
-    public double getChiffreAffaires() {
-        String sql = "SELECT SUM(montant_total) as total FROM vente";
-        
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            if (rs.next()) {
-                return rs.getDouble("total");
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors du calcul du CA : " + e.getMessage());
-        }
-        return 0.0;
-    }
-
-    /**
-     * Extrait un objet Vente depuis un ResultSet
-     */
+    
     private Vente extraireVente(ResultSet rs) throws SQLException {
         Vente vente = new Vente(
             rs.getInt("id"),

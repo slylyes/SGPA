@@ -1,8 +1,6 @@
 package com.pharmacie.model;
 
-/**
- * Classe représentant une ligne de commande
- */
+
 public class LigneCommande {
     private int id;
     private int idCommande;

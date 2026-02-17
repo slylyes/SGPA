@@ -1,8 +1,6 @@
 package com.pharmacie.model;
 
-/**
- * Classe représentant une ligne de rapport de ventes (agrégation mensuelle)
- */
+
 public class RapportVente {
     private int annee;
     private int mois;

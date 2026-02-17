@@ -4,9 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Classe représentant une vente/transaction
- */
+
 public class Vente {
     private int id;
     private LocalDateTime dateHeure;

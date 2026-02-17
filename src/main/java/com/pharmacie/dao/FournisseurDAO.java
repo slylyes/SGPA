@@ -5,9 +5,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO pour la gestion des fournisseurs en base de données
- */
+
 public class FournisseurDAO {
     private Connection connection;
 
@@ -15,9 +13,7 @@ public class FournisseurDAO {
         this.connection = DatabaseConnection.getInstance().getConnection();
     }
 
-    /**
-     * Crée un nouveau fournisseur
-     */
+
     public boolean creer(Fournisseur fournisseur) {
         String sql = "INSERT INTO fournisseur (nom, contact, adresse, actif) VALUES (?, ?, ?, ?)";
         
@@ -43,9 +39,7 @@ public class FournisseurDAO {
         return false;
     }
 
-    /**
-     * Récupère tous les fournisseurs actifs
-     */
+   
     public List<Fournisseur> lireTous() {
         List<Fournisseur> fournisseurs = new ArrayList<>();
         String sql = "SELECT * FROM fournisseur WHERE actif = TRUE ORDER BY nom";
@@ -62,9 +56,7 @@ public class FournisseurDAO {
         return fournisseurs;
     }
 
-    /**
-     * Récupère un fournisseur par son ID
-     */
+    
     public Fournisseur lireParId(int id) {
         String sql = "SELECT * FROM fournisseur WHERE id = ?";
         
@@ -82,9 +74,7 @@ public class FournisseurDAO {
         return null;
     }
 
-    /**
-     * Met à jour un fournisseur
-     */
+   
     public boolean mettreAJour(Fournisseur fournisseur) {
         String sql = "UPDATE fournisseur SET nom = ?, contact = ?, adresse = ? WHERE id = ?";
         
@@ -101,9 +91,7 @@ public class FournisseurDAO {
         return false;
     }
 
-    /**
-     * Archive un fournisseur (suppression logique)
-     */
+    // ici on archive un fournisseur au lieu de le supp (soft delete)
     public boolean supprimer(int id) {
         String sql = "UPDATE fournisseur SET actif = FALSE WHERE id = ?";
         
@@ -116,43 +104,7 @@ public class FournisseurDAO {
         return false;
     }
     
-    /**
-     * Réactive un fournisseur archivé
-     */
-    public boolean reactiver(int id) {
-        String sql = "UPDATE fournisseur SET actif = TRUE WHERE id = ?";
         
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la réactivation du fournisseur : " + e.getMessage());
-        }
-        return false;
-    }
-    
-    /**
-     * Récupère tous les fournisseurs archivés
-     */
-    public List<Fournisseur> lireTousArchives() {
-        List<Fournisseur> fournisseurs = new ArrayList<>();
-        String sql = "SELECT * FROM fournisseur WHERE actif = FALSE ORDER BY nom";
-        
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                fournisseurs.add(extraireFournisseur(rs));
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture des fournisseurs archivés : " + e.getMessage());
-        }
-        return fournisseurs;
-    }
-
-    /**
-     * Extrait un objet Fournisseur depuis un ResultSet
-     */
     private Fournisseur extraireFournisseur(ResultSet rs) throws SQLException {
         return new Fournisseur(
             rs.getInt("id"),

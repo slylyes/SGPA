@@ -1,8 +1,6 @@
 package com.pharmacie.model;
 
-/**
- * Classe représentant un médicament dans le classement des plus vendus
- */
+
 public class TopMedicament {
     private int idMedicament;
     private String nomCommercial;
