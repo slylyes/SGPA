@@ -7,6 +7,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 /**
@@ -23,177 +25,170 @@ public class MainMenuView {
 
     public void show() {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // En-tête
         HBox header = createHeader();
         root.setTop(header);
 
-        // Menu principal
-        VBox menu = createMenu();
-        root.setCenter(menu);
+        // Menu principal avec un ScrollPane au cas où l'écran est petit
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        Scene scene = new Scene(root, 1000, 700);
+        VBox menu = createMenu();
+        scrollPane.setContent(menu);
+        root.setCenter(scrollPane);
+
+        Scene scene = new Scene(root, 1200, 800); // Taille augmentée
         stage.setScene(scene);
+        stage.setTitle("Menu Principal - SGPA");
         stage.show();
     }
 
     private HBox createHeader() {
         HBox header = new HBox();
-        header.setPadding(new Insets(15, 20, 15, 20));
-        header.setStyle("-fx-background-color: #2196F3;");
+        header.setPadding(new Insets(20, 30, 20, 30));
+        header.setStyle("-fx-background-color: " + StyleManager.PRIMARY_COLOR + "; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 5);");
         header.setAlignment(Pos.CENTER_LEFT);
         header.setSpacing(20);
 
         Label titre = new Label("Pharmacie Dauphine");
-        titre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
+        titre.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.BOLD, 24));
+        titre.setStyle("-fx-text-fill: white;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         var utilisateur = SessionManager.getInstance().getUtilisateurConnecte();
-        Label lblUtilisateur = new Label("Connecté: " + utilisateur.getPrenom() + " " + 
-                                        utilisateur.getNom() + " (" + utilisateur.getRole() + ")");
-        lblUtilisateur.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+        VBox userInfo = new VBox(2);
+        userInfo.setAlignment(Pos.CENTER_RIGHT);
+
+        Label lblNom = new Label(utilisateur.getPrenom() + " " + utilisateur.getNom());
+        lblNom.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.BOLD, 14));
+        lblNom.setStyle("-fx-text-fill: white;");
+
+        Label lblRole = new Label(utilisateur.getRole().toString());
+        lblRole.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.NORMAL, 12));
+        lblRole.setStyle("-fx-text-fill: " + StyleManager.SECONDARY_COLOR + ";");
+
+        userInfo.getChildren().addAll(lblNom, lblRole);
 
         Button btnDeconnexion = new Button("Déconnexion");
-        btnDeconnexion.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        StyleManager.applyDestructiveButtonStyle(btnDeconnexion);
         btnDeconnexion.setOnAction(e -> {
             utilisateurController.deconnecter();
             LoginView loginView = new LoginView(stage);
             loginView.show();
         });
 
-        header.getChildren().addAll(titre, spacer, lblUtilisateur, btnDeconnexion);
+        header.getChildren().addAll(titre, spacer, userInfo, btnDeconnexion);
         return header;
     }
 
     private VBox createMenu() {
-        VBox menu = new VBox(20);
-        menu.setPadding(new Insets(40));
-        menu.setAlignment(Pos.CENTER);
+        VBox menu = new VBox(40);
+        menu.setPadding(new Insets(50));
+        menu.setAlignment(Pos.TOP_CENTER);
 
-        Label titre = new Label("Menu Principal");
-        titre.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        // Message de bienvenue
+        VBox welcomeBox = new VBox(10);
+        welcomeBox.setAlignment(Pos.CENTER);
+        Label lblWelcome = new Label("Bienvenue sur votre tableau de bord");
+        lblWelcome.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.BOLD, 28));
+        lblWelcome.setStyle("-fx-text-fill: " + StyleManager.PRIMARY_COLOR + ";");
 
+        Label lblSub = new Label("Sélectionnez un module pour commencer");
+        lblSub.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.NORMAL, 16));
+        lblSub.setStyle("-fx-text-fill: " + StyleManager.TEXT_SECONDARY_COLOR + ";");
+
+        welcomeBox.getChildren().addAll(lblWelcome, lblSub);
+
+        // Grille de boutons
         GridPane grid = new GridPane();
-        grid.setHgap(20);
-        grid.setVgap(20);
+        grid.setHgap(40);
+        grid.setVgap(40);
         grid.setAlignment(Pos.CENTER);
 
         // Boutons du menu
-        Button btnMedicaments = createMenuButton("Gestion des Médicaments", "");
-        btnMedicaments.setOnAction(e -> {
-            try {
-                System.out.println("Ouverture de la vue Médicaments...");
-                MedicamentView medicamentView = new MedicamentView(stage);
-                medicamentView.show();
-            } catch (Exception ex) {
-                System.err.println("Erreur lors de l'ouverture de MedicamentView: " + ex.getMessage());
-                ex.printStackTrace();
-                showError("Erreur", "Impossible d'ouvrir la gestion des médicaments: " + ex.getMessage());
-            }
-        });
+        Button btnMedicaments = StyleManager.createLargeMenuButton(
+            "Médicaments",
+            "Gérer le stock, les prix et les fiches médicaments"
+        );
+        btnMedicaments.setOnAction(e -> safeShow(() -> new MedicamentView(stage).show()));
 
-        Button btnVentes = createMenuButton("Gestion des Ventes", "");
-        btnVentes.setOnAction(e -> {
-            try {
-                System.out.println("Ouverture de la vue Ventes...");
-                VenteView venteView = new VenteView(stage);
-                venteView.show();
-            } catch (Exception ex) {
-                System.err.println("Erreur lors de l'ouverture de VenteView: " + ex.getMessage());
-                ex.printStackTrace();
-                showError("Erreur", "Impossible d'ouvrir la gestion des ventes: " + ex.getMessage());
-            }
-        });
+        Button btnVentes = StyleManager.createLargeMenuButton(
+            "Ventes",
+            "Encaisser des clients, gérer le panier et l'historique"
+        );
+        btnVentes.setOnAction(e -> safeShow(() -> new VenteView(stage).show()));
 
-        Button btnAlertes = createMenuButton("Alertes Stock", "");
-        btnAlertes.setOnAction(e -> {
-            try {
-                System.out.println("Ouverture de la vue Alertes...");
-                AlerteView alerteView = new AlerteView(stage);
-                alerteView.show();
-            } catch (Exception ex) {
-                System.err.println("Erreur lors de l'ouverture de AlerteView: " + ex.getMessage());
-                ex.printStackTrace();
-                showError("Erreur", "Impossible d'ouvrir les alertes: " + ex.getMessage());
-            }
-        });
+        Button btnAlertes = StyleManager.createLargeMenuButton(
+            "Alertes",
+            "Surveillance des ruptures de stock et péremptions"
+        );
+        btnAlertes.setOnAction(e -> safeShow(() -> new AlerteView(stage).show()));
 
-        Button btnCommandes = createMenuButton("Commandes Fournisseurs", "");
-        btnCommandes.setOnAction(e -> {
-            try {
-                System.out.println("Ouverture de la vue Commandes...");
-                CommandeView commandeView = new CommandeView(stage);
-                commandeView.show();
-            } catch (Exception ex) {
-                System.err.println("Erreur lors de l'ouverture de CommandeView: " + ex.getMessage());
-                ex.printStackTrace();
-                showError("Erreur", "Impossible d'ouvrir les commandes: " + ex.getMessage());
-            }
-        });
+        Button btnCommandes = StyleManager.createLargeMenuButton(
+            "Commandes",
+            "Gérer les réapprovisionnements fournisseurs"
+        );
+        btnCommandes.setOnAction(e -> safeShow(() -> new CommandeView(stage).show()));
 
-        Button btnFournisseurs = createMenuButton("Gestion des Fournisseurs", "");
-        btnFournisseurs.setOnAction(e -> {
-            try {
-                System.out.println("Ouverture de la vue Fournisseurs...");
-                FournisseurView fournisseurView = new FournisseurView(stage);
-                fournisseurView.show();
-            } catch (Exception ex) {
-                System.err.println("Erreur lors de l'ouverture de FournisseurView: " + ex.getMessage());
-                ex.printStackTrace();
-                showError("Erreur", "Impossible d'ouvrir les fournisseurs: " + ex.getMessage());
-            }
-        });
+        Button btnFournisseurs = StyleManager.createLargeMenuButton(
+            "Fournisseurs",
+            "Gérer la base de données des fournisseurs"
+        );
+        btnFournisseurs.setOnAction(e -> safeShow(() -> new FournisseurView(stage).show()));
 
-        Button btnUtilisateurs = createMenuButton("Gestion des Utilisateurs", "");
-        btnUtilisateurs.setOnAction(e -> {
-            try {
-                System.out.println("Ouverture de la vue Utilisateurs...");
-                UtilisateurView utilisateurView = new UtilisateurView(stage);
-                utilisateurView.show();
-            } catch (Exception ex) {
-                System.err.println("Erreur lors de l'ouverture de UtilisateurView: " + ex.getMessage());
-                ex.printStackTrace();
-                showError("Erreur", "Impossible d'ouvrir les utilisateurs: " + ex.getMessage());
-            }
-        });
+        Button btnUtilisateurs = StyleManager.createLargeMenuButton(
+            "Utilisateurs",
+            "Administration des comptes et accès"
+        );
+        btnUtilisateurs.setOnAction(e -> safeShow(() -> new UtilisateurView(stage).show()));
+
+        Button btnRapports = StyleManager.createLargeMenuButton(
+            "Rapports",
+            "Rapports financiers, ventes par mois et export PDF/Excel"
+        );
+        btnRapports.setOnAction(e -> safeShow(() -> new RapportView(stage).show()));
 
         // Désactiver certains boutons pour les préparateurs
         if (!SessionManager.getInstance().estPharmacien()) {
             btnFournisseurs.setDisable(true);
             btnUtilisateurs.setDisable(true);
             btnCommandes.setDisable(true);
+            btnRapports.setDisable(true);
+
+            // Layout différent pour Préparateur (moins de boutons)
+            grid.add(btnMedicaments, 0, 0);
+            grid.add(btnVentes, 1, 0);
+            grid.add(btnAlertes, 2, 0);
+        } else {
+            // Layout complet pour Pharmacien (3x3)
+            grid.add(btnMedicaments, 0, 0);
+            grid.add(btnVentes, 1, 0);
+            grid.add(btnAlertes, 2, 0);
+
+            grid.add(btnCommandes, 0, 1);
+            grid.add(btnFournisseurs, 1, 1);
+            grid.add(btnUtilisateurs, 2, 1);
+
+            grid.add(btnRapports, 0, 2);
         }
 
-        // Ajouter les boutons à la grille
-        grid.add(btnMedicaments, 0, 0);
-        grid.add(btnVentes, 1, 0);
-        grid.add(btnAlertes, 0, 1);
-        grid.add(btnCommandes, 1, 1);
-        grid.add(btnFournisseurs, 0, 2);
-        grid.add(btnUtilisateurs, 1, 2);
-
-        menu.getChildren().addAll(titre, grid);
+        menu.getChildren().addAll(welcomeBox, grid);
         return menu;
     }
 
-    private Button createMenuButton(String text, String icon) {
-        Button button = new Button(icon + "\n" + text);
-        button.setPrefSize(250, 120);
-        button.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 1; " +
-                       "-fx-font-size: 14px; -fx-background-radius: 5; -fx-border-radius: 5;");
-        
-        button.setOnMouseEntered(e -> 
-            button.setStyle("-fx-background-color: #e3f2fd; -fx-border-color: #2196F3; -fx-border-width: 2; " +
-                          "-fx-font-size: 14px; -fx-background-radius: 5; -fx-border-radius: 5;"));
-        
-        button.setOnMouseExited(e -> 
-            button.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 1; " +
-                          "-fx-font-size: 14px; -fx-background-radius: 5; -fx-border-radius: 5;"));
-        
-        return button;
+    private void safeShow(Runnable showAction) {
+        try {
+            showAction.run();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showError("Erreur de navigation", "Impossible d'ouvrir le module : " + ex.getMessage());
+        }
     }
 
     private void showError(String title, String message) {

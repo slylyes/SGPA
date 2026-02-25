@@ -2,9 +2,7 @@ package com.pharmacie.controller;
 
 import com.pharmacie.model.Utilisateur;
 
-/**
- * Classe pour gérer la session utilisateur (Pattern Singleton)
- */
+
 public class SessionManager {
     private static SessionManager instance;
     private Utilisateur utilisateurConnecte;
@@ -25,10 +23,6 @@ public class SessionManager {
 
     public Utilisateur getUtilisateurConnecte() {
         return utilisateurConnecte;
-    }
-
-    public boolean estConnecte() {
-        return utilisateurConnecte != null;
     }
 
     public boolean estPharmacien() {

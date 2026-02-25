@@ -26,45 +26,25 @@ public class AlerteView {
 
     public void show() {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // En-tête
-        HBox header = createHeader();
+        HBox header = StyleManager.createHeader("Alertes Stock et Péremption", () -> {
+            MainMenuView mainMenu = new MainMenuView(stage);
+            mainMenu.show();
+        });
         root.setTop(header);
 
         // Contenu
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(createAlertesStockTab(), createAlertesPeremptionTab());
+        tabPane.setStyle("-fx-tab-min-width: 150px; -fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
         root.setCenter(tabPane);
 
         Scene scene = new Scene(root, 1200, 700);
         stage.setScene(scene);
+        stage.setTitle("Alertes - SGPA");
         stage.show();
-    }
-
-    private HBox createHeader() {
-        HBox header = new HBox();
-        header.setPadding(new Insets(15, 20, 15, 20));
-        header.setStyle("-fx-background-color: #FF9800;");
-
-        Label titre = new Label("Alertes Stock et Péremption");
-        titre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
-
-        Button btnRetour = new Button("← Retour");
-        btnRetour.setStyle("-fx-background-color: white; -fx-text-fill: #FF9800;");
-        btnRetour.setOnAction(e -> {
-            MainMenuView mainMenu = new MainMenuView(stage);
-            mainMenu.show();
-        });
-
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-        header.getChildren().addAll(btnRetour, spacer1, titre, spacer2);
-        return header;
     }
 
     private Tab createAlertesStockTab() {
@@ -74,10 +54,11 @@ public class AlerteView {
         VBox content = new VBox(10);
         content.setPadding(new Insets(20));
 
-        Label info = new Label("Médicaments dont le stock est en dessous du seuil minimum");
-        info.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+        Label info = StyleManager.createSubtitleLabel("Médicaments dont le stock est en dessous du seuil minimum");
 
         TableView<Medicament> table = new TableView<>();
+        StyleManager.applyTableStyle(table);
+
         ObservableList<Medicament> data = FXCollections.observableArrayList(
             controller.getMedicamentsEnAlerteStock()
         );
@@ -109,27 +90,58 @@ public class AlerteView {
         });
         colStatut.setPrefWidth(120);
 
-        table.getColumns().addAll(colId, colNom, colStock, colSeuil, colStatut);
-
-        // Colorier les lignes selon le niveau d'alerte
-        table.setRowFactory(tv -> new TableRow<Medicament>() {
+        colStatut.setCellFactory(tc -> new TableCell<Medicament, String>() {
             @Override
-            protected void updateItem(Medicament item, boolean empty) {
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item == null || empty) {
+                if (empty || item == null) {
+                    setText(null);
                     setStyle("");
-                } else if (item.getStockActuel() == 0) {
-                    setStyle("-fx-background-color: #ffcdd2;");  // Rouge clair
                 } else {
-                    setStyle("-fx-background-color: #fff3e0;");  // Orange clair
+                    setText(item);
+                    if (item.equals("RUPTURE")) {
+                         setStyle("-fx-text-fill: " + StyleManager.DESTRUCTIVE_COLOR + "; -fx-font-weight: bold;");
+                    } else {
+                         setStyle("-fx-text-fill: " + StyleManager.WARNING_COLOR + "; -fx-font-weight: bold;");
+                    }
                 }
             }
         });
 
+        table.getColumns().addAll(colId, colNom, colStock, colSeuil, colStatut);
+
+        // Colorier les lignes selon le niveau d'alerte (avec sélection visible)
+        table.setRowFactory(tv -> new TableRow<Medicament>() {
+            {
+                selectedProperty().addListener((obs, old, sel) -> updateRowStyle());
+            }
+
+            private void updateRowStyle() {
+                Medicament item = getItem();
+                if (item == null || isEmpty()) {
+                    setStyle("");
+                } else if (isSelected()) {
+                    setStyle("-fx-background-color: " + StyleManager.SECONDARY_COLOR + ";");
+                } else if (item.getStockActuel() == 0) {
+                    setStyle("-fx-background-color: #ffebee;");
+                } else {
+                    setStyle("-fx-background-color: #fff8e1;");
+                }
+            }
+
+            @Override
+            protected void updateItem(Medicament item, boolean empty) {
+                super.updateItem(item, empty);
+                updateRowStyle();
+            }
+        });
+
         Label lblTotal = new Label("Total: " + data.size() + " médicament(s) en alerte");
-        lblTotal.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblTotal.setFont(javafx.scene.text.Font.font(StyleManager.FONT_FAMILY, javafx.scene.text.FontWeight.BOLD, 14));
+        lblTotal.setStyle("-fx-text-fill: " + StyleManager.TEXT_COLOR + ";");
 
         Button btnActualiser = new Button("Actualiser");
+        StyleManager.applySecondaryButtonStyle(btnActualiser);
         btnActualiser.setOnAction(e -> {
             data.clear();
             data.addAll(controller.getMedicamentsEnAlerteStock());
@@ -153,10 +165,11 @@ public class AlerteView {
         VBox content = new VBox(10);
         content.setPadding(new Insets(20));
 
-        Label info = new Label("Médicaments dont la date de péremption est dans moins de 3 mois");
-        info.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+        Label info = StyleManager.createSubtitleLabel("Médicaments dont la date de péremption est dans moins de 3 mois");
 
         TableView<Medicament> table = new TableView<>();
+        StyleManager.applyTableStyle(table);
+
         ObservableList<Medicament> data = FXCollections.observableArrayList(
             controller.getMedicamentsProchesPeremption()
         );
@@ -190,33 +203,45 @@ public class AlerteView {
 
         table.getColumns().addAll(colId, colNom, colStock, colPeremption, colJoursRestants);
 
-        // Colorier les lignes selon l'urgence
+        // Colorier les lignes selon l'urgence (avec sélection visible)
         table.setRowFactory(tv -> new TableRow<Medicament>() {
+            {
+                selectedProperty().addListener((obs, old, sel) -> updateRowStyle());
+            }
+
+            private void updateRowStyle() {
+                Medicament item = getItem();
+                if (item == null || isEmpty()) {
+                    setStyle("");
+                } else if (isSelected()) {
+                    setStyle("-fx-background-color: " + StyleManager.SECONDARY_COLOR + ";");
+                } else {
+                    long jours = java.time.temporal.ChronoUnit.DAYS.between(
+                        LocalDate.now(), item.getDatePeremption()
+                    );
+                    if (jours < 0) {
+                        setStyle("-fx-background-color: #ef9a9a;");
+                    } else if (jours < 30) {
+                        setStyle("-fx-background-color: #ffebee;");
+                    } else {
+                        setStyle("-fx-background-color: #fff8e1;");
+                    }
+                }
+            }
+
             @Override
             protected void updateItem(Medicament item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item == null || empty) {
-                    setStyle("");
-                } else {
-                    long jours = java.time.temporal.ChronoUnit.DAYS.between(
-                        LocalDate.now(), 
-                        item.getDatePeremption()
-                    );
-                    if (jours < 0) {
-                        setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");  // Périmé
-                    } else if (jours < 30) {
-                        setStyle("-fx-background-color: #ffcdd2;");  // Moins d'un mois
-                    } else {
-                        setStyle("-fx-background-color: #fff3e0;");  // Moins de 3 mois
-                    }
-                }
+                updateRowStyle();
             }
         });
 
         Label lblTotal = new Label("Total: " + data.size() + " médicament(s) proche de la péremption");
-        lblTotal.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblTotal.setFont(javafx.scene.text.Font.font(StyleManager.FONT_FAMILY, javafx.scene.text.FontWeight.BOLD, 14));
+        lblTotal.setStyle("-fx-text-fill: " + StyleManager.TEXT_COLOR + ";");
 
         Button btnActualiser = new Button("Actualiser");
+        StyleManager.applySecondaryButtonStyle(btnActualiser);
         btnActualiser.setOnAction(e -> {
             data.clear();
             data.addAll(controller.getMedicamentsProchesPeremption());

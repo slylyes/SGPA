@@ -6,9 +6,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO pour la gestion des médicaments en base de données
- */
+
 public class MedicamentDAO {
     private Connection connection;
 
@@ -16,9 +14,7 @@ public class MedicamentDAO {
         this.connection = DatabaseConnection.getInstance().getConnection();
     }
 
-    /**
-     * Crée un nouveau médicament en base
-     */
+   
     public boolean creer(Medicament medicament) {
         String sql = "INSERT INTO medicament (nom_commercial, principe_actif, forme_galenique, " +
                     "dosage, prix_public, necessite_ordonnance, date_peremption, stock_actuel, seuil_minimum, actif) " +
@@ -52,9 +48,7 @@ public class MedicamentDAO {
         return false;
     }
 
-    /**
-     * Récupère tous les médicaments actifs
-     */
+    
     public List<Medicament> lireTous() {
         List<Medicament> medicaments = new ArrayList<>();
         String sql = "SELECT * FROM medicament WHERE actif = TRUE ORDER BY nom_commercial";
@@ -71,9 +65,6 @@ public class MedicamentDAO {
         return medicaments;
     }
 
-    /**
-     * Récupère un médicament par son ID
-     */
     public Medicament lireParId(int id) {
         String sql = "SELECT * FROM medicament WHERE id = ?";
         
@@ -91,9 +82,7 @@ public class MedicamentDAO {
         return null;
     }
 
-    /**
-     * Recherche des médicaments actifs par nom
-     */
+    
     public List<Medicament> rechercherParNom(String nom) {
         List<Medicament> medicaments = new ArrayList<>();
         String sql = "SELECT * FROM medicament WHERE actif = TRUE AND nom_commercial LIKE ? ORDER BY nom_commercial";
@@ -112,9 +101,6 @@ public class MedicamentDAO {
         return medicaments;
     }
 
-    /**
-     * Met à jour un médicament
-     */
     public boolean mettreAJour(Medicament medicament) {
         String sql = "UPDATE medicament SET nom_commercial = ?, principe_actif = ?, forme_galenique = ?, " +
                     "dosage = ?, prix_public = ?, necessite_ordonnance = ?, date_peremption = ?, " +
@@ -139,9 +125,7 @@ public class MedicamentDAO {
         return false;
     }
 
-    /**
-     * Archive un médicament (suppression logique)
-     */
+   
     public boolean supprimer(int id) {
         String sql = "UPDATE medicament SET actif = FALSE WHERE id = ?";
         
@@ -153,44 +137,8 @@ public class MedicamentDAO {
         }
         return false;
     }
-    
-    /**
-     * Réactive un médicament archivé
-     */
-    public boolean reactiver(int id) {
-        String sql = "UPDATE medicament SET actif = TRUE WHERE id = ?";
-        
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la réactivation : " + e.getMessage());
-        }
-        return false;
-    }
-    
-    /**
-     * Récupère tous les médicaments archivés
-     */
-    public List<Medicament> lireTousArchives() {
-        List<Medicament> medicaments = new ArrayList<>();
-        String sql = "SELECT * FROM medicament WHERE actif = FALSE ORDER BY nom_commercial";
-        
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                medicaments.add(extraireMedicament(rs));
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture des médicaments archivés : " + e.getMessage());
-        }
-        return medicaments;
-    }
 
-    /**
-     * Récupère les médicaments actifs en alerte de stock
-     */
+    
     public List<Medicament> getMedicamentsEnAlerteStock() {
         List<Medicament> medicaments = new ArrayList<>();
         String sql = "SELECT * FROM medicament WHERE actif = TRUE AND stock_actuel <= seuil_minimum ORDER BY stock_actuel";
@@ -207,13 +155,11 @@ public class MedicamentDAO {
         return medicaments;
     }
 
-    /**
-     * Récupère les médicaments actifs proches de la péremption (< 3 mois)
-     */
+    
     public List<Medicament> getMedicamentsProchesPeremption() {
         List<Medicament> medicaments = new ArrayList<>();
         LocalDate limitDate = LocalDate.now().plusMonths(3);
-        String sql = "SELECT * FROM medicament WHERE actif = TRUE AND date_peremption < ? ORDER BY date_peremption";
+        String sql = "SELECT * FROM medicament WHERE actif = TRUE AND stock_actuel > 0 AND date_peremption < ? ORDER BY date_peremption";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(limitDate));
@@ -229,9 +175,7 @@ public class MedicamentDAO {
         return medicaments;
     }
 
-    /**
-     * Met à jour le stock d'un médicament
-     */
+    
     public boolean mettreAJourStock(int idMedicament, int nouvelleQuantite) {
         String sql = "UPDATE medicament SET stock_actuel = ? WHERE id = ?";
         

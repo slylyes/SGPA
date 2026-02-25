@@ -2,14 +2,12 @@ package com.pharmacie.model;
 
 import java.time.LocalDate;
 
-/**
- * Classe représentant un médicament dans le système
- */
+
 public class Medicament {
     private int id;
     private String nomCommercial;
     private String principeActif;
-    private String formeGalenique;  // comprimé, sirop, crème, etc.
+    private String formeGalenique;  
     private String dosage;
     private double prixPublic;
     private boolean necessiteOrdonnance;
@@ -138,21 +136,6 @@ public class Medicament {
 
     public void setActif(boolean actif) {
         this.actif = actif;
-    }
-
-    /**
-     * Vérifie si le stock est en alerte (en dessous du seuil)
-     */
-    public boolean estEnAlerteStock() {
-        return stockActuel <= seuilMinimum;
-    }
-
-    /**
-     * Vérifie si le médicament périme dans moins de 3 mois
-     */
-    public boolean estProcheDeLaPeremption() {
-        LocalDate dansTroisMois = LocalDate.now().plusMonths(3);
-        return datePeremption.isBefore(dansTroisMois);
     }
 
     @Override

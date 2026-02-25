@@ -33,10 +33,13 @@ public class CommandeView {
 
     public void show() {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // En-tête
-        HBox header = createHeader();
+        HBox header = StyleManager.createHeader("Gestion des Commandes Fournisseurs", () -> {
+            MainMenuView mainMenu = new MainMenuView(stage);
+            mainMenu.show();
+        });
         root.setTop(header);
 
         // Toolbar
@@ -45,52 +48,34 @@ public class CommandeView {
 
         // Table
         table = createTable();
-        root.setCenter(table);
+        VBox tableContainer = new VBox(table);
+        tableContainer.setPadding(new Insets(20));
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        root.setCenter(tableContainer);
 
         // Charger les données
         chargerCommandes();
 
         Scene scene = new Scene(root, 1200, 700);
         stage.setScene(scene);
+        stage.setTitle("Commandes - SGPA");
         stage.show();
-    }
-
-    private HBox createHeader() {
-        HBox header = new HBox();
-        header.setPadding(new Insets(15, 20, 15, 20));
-        header.setStyle("-fx-background-color: #2196F3;");
-
-        Label titre = new Label("Gestion des Commandes Fournisseurs");
-        titre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
-
-        Button btnRetour = new Button("← Retour");
-        btnRetour.setStyle("-fx-background-color: white; -fx-text-fill: #2196F3;");
-        btnRetour.setOnAction(e -> {
-            MainMenuView mainMenu = new MainMenuView(stage);
-            mainMenu.show();
-        });
-
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-        header.getChildren().addAll(btnRetour, spacer1, titre, spacer2);
-        return header;
     }
 
     private HBox createToolbar() {
         HBox toolbar = new HBox(10);
-        toolbar.setPadding(new Insets(10, 20, 10, 20));
-        toolbar.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;");
+        toolbar.setPadding(new Insets(15, 20, 15, 20));
+        toolbar.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
 
         Button btnNouvelle = new Button("Nouvelle commande");
-        btnNouvelle.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        StyleManager.applyPrimaryButtonStyle(btnNouvelle);
         btnNouvelle.setOnAction(e -> afficherFormulaireCommande());
 
         Button btnRecue = new Button("Marquer comme reçue");
-        btnRecue.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
+        StyleManager.applyWarningButtonStyle(btnRecue);
+        // Special color for received? Warning style is orange, maybe custom green?
+        // Let's stick to warning for action that changes state important
         btnRecue.setOnAction(e -> {
             Commande selected = table.getSelectionModel().getSelectedItem();
             if (selected != null && selected.getStatut().equals("EN_ATTENTE")) {
@@ -101,10 +86,11 @@ public class CommandeView {
         });
 
         Button btnAuto = new Button("Commande automatique");
-        btnAuto.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white;");
+        StyleManager.applySecondaryButtonStyle(btnAuto);
         btnAuto.setOnAction(e -> afficherCommandeAutomatique());
 
         Button btnDetails = new Button("Détails");
+        StyleManager.applySecondaryButtonStyle(btnDetails);
         btnDetails.setOnAction(e -> {
             Commande selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -115,6 +101,7 @@ public class CommandeView {
         });
 
         Button btnActualiser = new Button("Actualiser");
+        StyleManager.applySecondaryButtonStyle(btnActualiser);
         btnActualiser.setOnAction(e -> chargerCommandes());
 
         Region spacer = new Region();
@@ -126,6 +113,7 @@ public class CommandeView {
 
     private TableView<Commande> createTable() {
         TableView<Commande> table = new TableView<>();
+        StyleManager.applyTableStyle(table);
         table.setItems(data);
 
         TableColumn<Commande, Integer> colId = new TableColumn<>("ID");
@@ -148,22 +136,27 @@ public class CommandeView {
         colStatut.setCellValueFactory(new PropertyValueFactory<>("statut"));
         colStatut.setPrefWidth(120);
 
-        table.getColumns().addAll(colId, colFournisseur, colDateCmd, colDateRec, colStatut);
-
-        // Colorier selon le statut
-        table.setRowFactory(tv -> new TableRow<Commande>() {
+        colStatut.setCellFactory(tc -> new TableCell<Commande, String>() {
             @Override
-            protected void updateItem(Commande item, boolean empty) {
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item == null || empty) {
+                if (empty || item == null) {
+                    setText(null);
                     setStyle("");
-                } else if (item.getStatut().equals("RECUE")) {
-                    setStyle("-fx-background-color: #c8e6c9;");  // Vert clair
-                } else if (item.getStatut().equals("EN_ATTENTE")) {
-                    setStyle("-fx-background-color: #fff3e0;");  // Orange clair
+                } else {
+                    setText(item);
+                    if (item.equals("RECUE")) {
+                        setStyle("-fx-text-fill: " + StyleManager.PRIMARY_COLOR + "; -fx-font-weight: bold;");
+                    } else if (item.equals("EN_ATTENTE")) {
+                        setStyle("-fx-text-fill: " + StyleManager.WARNING_COLOR + "; -fx-font-weight: bold;");
+                    } else {
+                        setStyle("");
+                    }
                 }
             }
         });
+
+        table.getColumns().addAll(colId, colFournisseur, colDateCmd, colDateRec, colStatut);
 
         return table;
     }
@@ -178,6 +171,9 @@ public class CommandeView {
         dialog.setTitle("Nouvelle Commande");
         dialog.setHeaderText("Créer une nouvelle commande fournisseur");
 
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
+
         ButtonType btnValider = new ButtonType("Créer", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
 
@@ -189,20 +185,24 @@ public class CommandeView {
         cmbFournisseur.getItems().addAll(commandeController.getTousFournisseurs());
         cmbFournisseur.setPromptText("Sélectionner un fournisseur");
         cmbFournisseur.setPrefWidth(300);
+        cmbFournisseur.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         // Liste des médicaments à commander
         ListView<String> listView = new ListView<>();
+        listView.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
         ObservableList<LigneCommande> lignes = FXCollections.observableArrayList();
 
         ComboBox<Medicament> cmbMedicament = new ComboBox<>();
         cmbMedicament.getItems().addAll(medicamentController.getTousMedicaments());
         cmbMedicament.setPromptText("Sélectionner un médicament");
         cmbMedicament.setPrefWidth(250);
+        cmbMedicament.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         Spinner<Integer> spinQte = new Spinner<>(1, 1000, 50);
         spinQte.setPrefWidth(100);
 
         Button btnAjouterLigne = new Button("Ajouter");
+        StyleManager.applyPrimaryButtonStyle(btnAjouterLigne);
         btnAjouterLigne.setOnAction(e -> {
             Medicament med = cmbMedicament.getValue();
             if (med != null) {
@@ -222,6 +222,7 @@ public class CommandeView {
         });
 
         HBox ligneForm = new HBox(10, cmbMedicament, spinQte, btnAjouterLigne);
+        ligneForm.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         content.getChildren().addAll(
             new Label("Fournisseur:"), cmbFournisseur,
@@ -273,6 +274,7 @@ public class CommandeView {
         dialog.setTitle("Commande Automatique");
         dialog.setHeaderText("Créer une commande automatique pour les médicaments en alerte");
         dialog.setContentText("Choisir le fournisseur:");
+        dialog.getDialogPane().setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         dialog.showAndWait().ifPresent(fournisseur -> {
             int nbMedicaments = commandeController.creerCommandesAutomatiques(fournisseur.getId());

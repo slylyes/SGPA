@@ -15,6 +15,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,80 +43,104 @@ public class VenteView {
 
     public void show() {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // En-tête
-        HBox header = createHeader();
+        HBox header = StyleManager.createHeader("Nouvelle Vente", () -> {
+            MainMenuView mainMenu = new MainMenuView(stage);
+            mainMenu.show();
+        });
+
+        Button btnHistorique = new Button("Historique");
+        StyleManager.applySecondaryButtonStyle(btnHistorique);
+        // Special style for header button
+        btnHistorique.setStyle(btnHistorique.getStyle() + "-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; -fx-border-color: transparent;");
+        btnHistorique.setOnAction(e -> afficherHistorique());
+
+        header.getChildren().add(btnHistorique); // Add to the right
+
         root.setTop(header);
 
         // Contenu principal
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(createSelectionMedicaments(), createPanier());
-        splitPane.setDividerPositions(0.5);
+        splitPane.setDividerPositions(0.4); // More space for basket
+        splitPane.setStyle("-fx-background-color: transparent; -fx-padding: 20;");
         root.setCenter(splitPane);
 
         Scene scene = new Scene(root, 1200, 700);
         stage.setScene(scene);
+        stage.setTitle("Vente - SGPA");
         stage.show();
     }
 
-    private HBox createHeader() {
-        HBox header = new HBox();
-        header.setPadding(new Insets(15, 20, 15, 20));
-        header.setStyle("-fx-background-color: #2196F3;");
-
-        Label titre = new Label("Nouvelle Vente");
-        titre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
-
-        Button btnRetour = new Button("← Retour");
-        btnRetour.setStyle("-fx-background-color: white; -fx-text-fill: #2196F3;");
-        btnRetour.setOnAction(e -> {
-            MainMenuView mainMenu = new MainMenuView(stage);
-            mainMenu.show();
-        });
-
-        Button btnHistorique = new Button("Historique des ventes");
-        btnHistorique.setStyle("-fx-background-color: white; -fx-text-fill: #2196F3;");
-        btnHistorique.setOnAction(e -> afficherHistorique());
-
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-        header.getChildren().addAll(btnRetour, spacer1, titre, spacer2, btnHistorique);
-        return header;
-    }
-
     private VBox createSelectionMedicaments() {
-        VBox box = new VBox(10);
-        box.setPadding(new Insets(20));
-        box.setStyle("-fx-background-color: white;");
+        VBox box = StyleManager.createCard("Sélection des Médicaments");
 
-        Label titre = new Label("Sélection des Médicaments");
-        titre.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        TextField txtRecherche = new TextField();
-        txtRecherche.setPromptText("Rechercher un médicament...");
-
+        // ComboBox recherchable unique (tapez pour filtrer)
         ComboBox<Medicament> cmbMedicaments = new ComboBox<>();
-        cmbMedicaments.setPromptText("Sélectionner un médicament");
-        cmbMedicaments.setPrefWidth(400);
-        cmbMedicaments.getItems().addAll(medicamentController.getTousMedicaments());
+        cmbMedicaments.setEditable(true);
+        cmbMedicaments.setPromptText("Tapez pour rechercher un médicament...");
+        cmbMedicaments.setMaxWidth(Double.MAX_VALUE);
+        cmbMedicaments.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
-        txtRecherche.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.isEmpty()) {
-                cmbMedicaments.getItems().clear();
-                cmbMedicaments.getItems().addAll(medicamentController.getTousMedicaments());
-            } else {
-                cmbMedicaments.getItems().clear();
-                cmbMedicaments.getItems().addAll(medicamentController.rechercherMedicaments(newVal));
+        ObservableList<Medicament> tousLesMedicaments = FXCollections.observableArrayList(
+            medicamentController.getTousMedicaments()
+        );
+        cmbMedicaments.setItems(tousLesMedicaments);
+
+        // Affichage détaillé dans la liste déroulante
+        cmbMedicaments.setCellFactory(lv -> new ListCell<Medicament>() {
+            @Override
+            protected void updateItem(Medicament item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null :
+                    item.getNomCommercial() + "  (" + String.format("%.2f €", item.getPrixPublic()) +
+                    " | Stock: " + item.getStockActuel() + ")");
             }
         });
 
+        // Conversion texte ↔ objet
+        cmbMedicaments.setConverter(new javafx.util.StringConverter<Medicament>() {
+            @Override
+            public String toString(Medicament med) {
+                return med == null ? "" : med.getNomCommercial();
+            }
+            @Override
+            public Medicament fromString(String s) {
+                if (s == null || s.isEmpty()) return null;
+                return tousLesMedicaments.stream()
+                    .filter(m -> m.getNomCommercial().equalsIgnoreCase(s))
+                    .findFirst().orElse(null);
+            }
+        });
+
+        // Filtrage dynamique en tapant
+        cmbMedicaments.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+            Medicament selected = cmbMedicaments.getSelectionModel().getSelectedItem();
+            if (selected != null && selected.getNomCommercial().equals(newVal)) return;
+
+            javafx.application.Platform.runLater(() -> {
+                if (newVal == null || newVal.isEmpty()) {
+                    cmbMedicaments.setItems(tousLesMedicaments);
+                } else {
+                    ObservableList<Medicament> filtre = FXCollections.observableArrayList();
+                    String recherche = newVal.toLowerCase();
+                    for (Medicament m : tousLesMedicaments) {
+                        if (m.getNomCommercial().toLowerCase().contains(recherche)) {
+                            filtre.add(m);
+                        }
+                    }
+                    cmbMedicaments.setItems(filtre);
+                }
+                if (!cmbMedicaments.isShowing()) {
+                    cmbMedicaments.show();
+                }
+            });
+        });
+
         Label lblStock = new Label("Stock disponible: -");
-        lblStock.setStyle("-fx-font-size: 12px; -fx-text-fill: #666;");
+        lblStock.setStyle("-fx-font-size: 12px; -fx-text-fill: " + StyleManager.TEXT_SECONDARY_COLOR + ";");
 
         cmbMedicaments.setOnAction(e -> {
             Medicament selected = cmbMedicaments.getValue();
@@ -126,14 +152,18 @@ public class VenteView {
         Spinner<Integer> spinQuantite = new Spinner<>(1, 100, 1);
         spinQuantite.setEditable(true);
         spinQuantite.setPrefWidth(100);
+        spinQuantite.getEditor().setFont(Font.font(StyleManager.FONT_FAMILY, 14));
 
         Button btnAjouter = new Button("Ajouter au panier");
-        btnAjouter.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px;");
+        StyleManager.applyPrimaryButtonStyle(btnAjouter);
+        btnAjouter.setMaxWidth(Double.MAX_VALUE);
         btnAjouter.setOnAction(e -> {
             Medicament selected = cmbMedicaments.getValue();
             if (selected != null) {
                 ajouterAuPanier(selected, spinQuantite.getValue());
                 cmbMedicaments.setValue(null);
+                cmbMedicaments.getEditor().clear();
+                cmbMedicaments.setItems(tousLesMedicaments);
                 spinQuantite.getValueFactory().setValue(1);
                 lblStock.setText("Stock disponible: -");
             } else {
@@ -143,49 +173,41 @@ public class VenteView {
 
         GridPane form = new GridPane();
         form.setHgap(10);
-        form.setVgap(10);
+        form.setVgap(15);
         form.add(new Label("Médicament:"), 0, 0);
         form.add(cmbMedicaments, 1, 0);
         form.add(lblStock, 1, 1);
         form.add(new Label("Quantité:"), 0, 2);
         form.add(spinQuantite, 1, 2);
 
-        box.getChildren().addAll(titre, new Separator(), txtRecherche, form, btnAjouter);
+        box.getChildren().addAll(form, new Separator(), btnAjouter);
         return box;
     }
 
     private VBox createPanier() {
-        VBox box = new VBox(10);
-        box.setPadding(new Insets(20));
-        box.setStyle("-fx-background-color: white;");
-
-        Label titre = new Label("Panier");
-        titre.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        VBox box = StyleManager.createCard("Panier");
 
         tablePanier = new TableView<>();
+        StyleManager.applyTableStyle(tablePanier);
         tablePanier.setItems(panierData);
 
         TableColumn<LigneVente, String> colNom = new TableColumn<>("Médicament");
         colNom.setCellValueFactory(new PropertyValueFactory<>("nomMedicament"));
-        colNom.setPrefWidth(250);
 
         TableColumn<LigneVente, Integer> colQte = new TableColumn<>("Quantité");
         colQte.setCellValueFactory(new PropertyValueFactory<>("quantite"));
-        colQte.setPrefWidth(80);
 
         TableColumn<LigneVente, Double> colPrixU = new TableColumn<>("Prix Unit.");
         colPrixU.setCellValueFactory(new PropertyValueFactory<>("prixUnitaire"));
-        colPrixU.setPrefWidth(80);
 
         TableColumn<LigneVente, Double> colTotal = new TableColumn<>("Sous-Total");
         colTotal.setCellValueFactory(new PropertyValueFactory<>("sousTotal"));
-        colTotal.setPrefWidth(100);
 
         tablePanier.getColumns().clear();
         tablePanier.getColumns().addAll(List.of(colNom, colQte, colPrixU, colTotal));
 
         Button btnRetirer = new Button("Retirer du panier");
-        btnRetirer.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        StyleManager.applyDestructiveButtonStyle(btnRetirer);
         btnRetirer.setOnAction(e -> {
             LigneVente selected = tablePanier.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -195,12 +217,17 @@ public class VenteView {
         });
 
         CheckBox chkOrdonnance = new CheckBox("Vente avec ordonnance");
+        chkOrdonnance.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         lblTotal = new Label("TOTAL: 0.00 €");
-        lblTotal.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2196F3;");
+        lblTotal.setFont(Font.font(StyleManager.FONT_FAMILY, FontWeight.BOLD, 24));
+        lblTotal.setStyle("-fx-text-fill: " + StyleManager.PRIMARY_COLOR + ";");
 
         Button btnValider = new Button("Valider la vente");
-        btnValider.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10 30;");
+        StyleManager.applyPrimaryButtonStyle(btnValider);
+        btnValider.setPrefWidth(200);
+        btnValider.setStyle("-fx-font-size: 16px; -fx-background-color: " + StyleManager.PRIMARY_COLOR + "; -fx-text-fill: white; -fx-padding: 10 30; -fx-background-radius: 8;");
+
         btnValider.setOnAction(e -> {
             if (validerVente(chkOrdonnance.isSelected())) {
                 panierData.clear();
@@ -208,7 +235,8 @@ public class VenteView {
             }
         });
 
-        Button btnVider = new Button("Vider le panier");
+        Button btnVider = new Button("Vider");
+        StyleManager.applySecondaryButtonStyle(btnVider);
         btnVider.setOnAction(e -> {
             panierData.clear();
             calculerTotal();
@@ -216,8 +244,14 @@ public class VenteView {
 
         HBox actions = new HBox(10, btnRetirer, btnVider);
 
-        box.getChildren().addAll(titre, new Separator(), tablePanier, actions, new Separator(), 
-                                chkOrdonnance, lblTotal, btnValider);
+        HBox totalBox = new HBox(lblTotal);
+        totalBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+
+        HBox validationBox = new HBox(btnValider);
+        validationBox.setAlignment(javafx.geometry.Pos.CENTER);
+
+        box.getChildren().addAll(tablePanier, actions, new Separator(),
+                                chkOrdonnance, totalBox, validationBox);
         VBox.setVgrow(tablePanier, Priority.ALWAYS);
         return box;
     }
@@ -226,6 +260,14 @@ public class VenteView {
         // Validation de la quantité
         if (quantite <= 0) {
             showAlert(Alert.AlertType.ERROR, "La quantité doit être supérieure à 0");
+            return;
+        }
+
+        // Vérification de la date de péremption
+        if (medicament.getDatePeremption().isBefore(java.time.LocalDate.now())) {
+            showAlert(Alert.AlertType.ERROR, 
+                "VENTE INTERDITE : Le médicament \"" + medicament.getNomCommercial() + 
+                "\" est périmé depuis le " + medicament.getDatePeremption() + " !");
             return;
         }
         
@@ -273,6 +315,22 @@ public class VenteView {
             return false;
         }
 
+        // Vérifier la péremption des médicaments
+        List<String> medicamentsPerimes = new ArrayList<>();
+        for (LigneVente ligne : panierData) {
+            Medicament med = medicamentController.getMedicamentParId(ligne.getIdMedicament());
+            if (med != null && med.getDatePeremption().isBefore(java.time.LocalDate.now())) {
+                medicamentsPerimes.add(med.getNomCommercial() + " (périmé le " + med.getDatePeremption() + ")");
+            }
+        }
+        if (!medicamentsPerimes.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR,
+                "VENTE INTERDITE : Les médicaments suivants sont périmés :\n" +
+                String.join("\n", medicamentsPerimes) +
+                "\n\nRetirez-les du panier avant de valider.");
+            return false;
+        }
+
         // Vérifier si des médicaments nécessitent une ordonnance
         List<String> medicamentsOrdonnance = new ArrayList<>();
         for (LigneVente ligne : panierData) {
@@ -316,7 +374,7 @@ public class VenteView {
         dialogStage.initOwner(stage);
 
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // Données de base
         ObservableList<Vente> ventesBase = FXCollections.observableArrayList(venteController.getToutesVentes());
@@ -325,7 +383,8 @@ public class VenteView {
         // Filtres
         TextField txtRecherche = new TextField();
         txtRecherche.setPromptText("ID vente ou médicament...");
-        txtRecherche.setPrefWidth(300);
+        txtRecherche.setPrefWidth(200);
+        StyleManager.applyTextFieldStyle(txtRecherche);
 
         DatePicker dpDebut = new DatePicker();
         dpDebut.setPromptText("Date début");
@@ -335,8 +394,10 @@ public class VenteView {
         ComboBox<String> cmbOrdonnance = new ComboBox<>();
         cmbOrdonnance.getItems().addAll("Toutes", "Avec ordonnance", "Sans ordonnance");
         cmbOrdonnance.setValue("Toutes");
+        cmbOrdonnance.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         Button btnActualiser = new Button("Actualiser");
+        StyleManager.applySecondaryButtonStyle(btnActualiser);
         btnActualiser.setOnAction(e -> {
             ventesBase.setAll(venteController.getToutesVentes());
             appliquerFiltres(ventesFiltrees, txtRecherche, dpDebut, dpFin, cmbOrdonnance);
@@ -348,10 +409,12 @@ public class VenteView {
                                 new Label("Ordonnance:"), cmbOrdonnance,
                                 btnActualiser);
         filtres.setPadding(new Insets(10, 20, 10, 20));
-        filtres.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;");
+        filtres.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
+        filtres.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         // Table des ventes
         TableView<Vente> tableVentes = new TableView<>();
+        StyleManager.applyTableStyle(tableVentes);
         tableVentes.setItems(ventesFiltrees);
 
         TableColumn<Vente, Integer> colId = new TableColumn<>("ID");
@@ -377,6 +440,8 @@ public class VenteView {
 
         // Table des lignes de vente
         TableView<LigneVente> tableLignes = new TableView<>();
+        StyleManager.applyTableStyle(tableLignes);
+
         TableColumn<LigneVente, String> colMed = new TableColumn<>("Médicament");
         colMed.setCellValueFactory(new PropertyValueFactory<>("nomMedicament"));
         colMed.setPrefWidth(220);
@@ -397,10 +462,11 @@ public class VenteView {
         tableLignes.getColumns().addAll(List.of(colMed, colQte, colPU, colST));
 
         Label lblDetails = new Label("Détails des médicaments vendus");
-        lblDetails.setStyle("-fx-font-weight: bold; -fx-padding: 5 0 5 0;");
+        lblDetails.setStyle("-fx-font-weight: bold; -fx-padding: 5 0 5 0; -fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         VBox detailsBox = new VBox(5, lblDetails, tableLignes);
         detailsBox.setPadding(new Insets(10));
+        VBox.setVgrow(tableLignes, Priority.ALWAYS);
 
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(tableVentes, detailsBox);

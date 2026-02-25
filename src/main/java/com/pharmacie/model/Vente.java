@@ -4,9 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Classe représentant une vente/transaction
- */
+
 public class Vente {
     private int id;
     private LocalDateTime dateHeure;
@@ -57,7 +55,6 @@ public class Vente {
 
     public void setLignesVente(List<LigneVente> lignesVente) {
         this.lignesVente = lignesVente;
-        calculerMontantTotal();
     }
 
     public double getMontantTotal() {

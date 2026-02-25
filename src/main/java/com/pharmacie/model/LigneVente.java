@@ -1,8 +1,6 @@
 package com.pharmacie.model;
 
-/**
- * Classe représentant une ligne de vente (détail d'un médicament vendu)
- */
+
 public class LigneVente {
     private int id;
     private int idVente;

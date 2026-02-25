@@ -1,8 +1,6 @@
 package com.pharmacie.model;
 
-/**
- * Classe représentant un utilisateur du système
- */
+
 public class Utilisateur {
     private int id;
     private String login;
@@ -97,13 +95,6 @@ public class Utilisateur {
      */
     public boolean estPharmacien() {
         return this.role == Role.PHARMACIEN;
-    }
-
-    /**
-     * Vérifie si l'utilisateur est préparateur
-     */
-    public boolean estPreparateur() {
-        return this.role == Role.PREPARATEUR;
     }
 
     @Override

@@ -33,7 +33,7 @@ public class Main extends Application {
         // Appeler la méthode parente
         super.stop();
         
-        System.out.println("✓ Application fermée proprement");
+        System.out.println("Application fermée proprement");
     }
 
     public static void main(String[] args) {

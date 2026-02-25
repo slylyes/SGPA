@@ -7,9 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO pour la gestion des commandes fournisseurs en base de données
- */
+
 public class CommandeDAO {
     private Connection connection;
 
@@ -17,9 +15,7 @@ public class CommandeDAO {
         this.connection = DatabaseConnection.getInstance().getConnection();
     }
 
-    /**
-     * Crée une nouvelle commande avec ses lignes
-     */
+    
     public boolean creer(Commande commande) {
         String sqlCommande = "INSERT INTO commande (id_fournisseur, date_commande, statut) VALUES (?, ?, ?)";
         String sqlLigne = "INSERT INTO ligne_commande (id_commande, id_medicament, quantite) VALUES (?, ?, ?)";
@@ -27,7 +23,6 @@ public class CommandeDAO {
         try {
             connection.setAutoCommit(false);
             
-            // Insérer la commande
             try (PreparedStatement stmtCommande = connection.prepareStatement(sqlCommande, Statement.RETURN_GENERATED_KEYS)) {
                 stmtCommande.setInt(1, commande.getIdFournisseur());
                 stmtCommande.setDate(2, Date.valueOf(commande.getDateCommande()));
@@ -42,7 +37,6 @@ public class CommandeDAO {
                 }
             }
             
-            // Insérer les lignes de commande
             try (PreparedStatement stmtLigne = connection.prepareStatement(sqlLigne)) {
                 for (LigneCommande ligne : commande.getLignesCommande()) {
                     stmtLigne.setInt(1, commande.getId());
@@ -73,9 +67,7 @@ public class CommandeDAO {
         return false;
     }
 
-    /**
-     * Récupère toutes les commandes
-     */
+   
     public List<Commande> lireTous() {
         List<Commande> commandes = new ArrayList<>();
         String sql = "SELECT c.*, f.nom as nom_fournisseur FROM commande c " +
@@ -96,9 +88,7 @@ public class CommandeDAO {
         return commandes;
     }
 
-    /**
-     * Récupère une commande par son ID
-     */
+   
     public Commande lireParId(int id) {
         String sql = "SELECT c.*, f.nom as nom_fournisseur FROM commande c " +
                     "JOIN fournisseur f ON c.id_fournisseur = f.id " +
@@ -120,9 +110,7 @@ public class CommandeDAO {
         return null;
     }
 
-    /**
-     * Récupère les lignes d'une commande
-     */
+   
     private List<LigneCommande> lireLignesCommande(int idCommande) {
         List<LigneCommande> lignes = new ArrayList<>();
         String sql = "SELECT lc.*, m.nom_commercial FROM ligne_commande lc " +
@@ -149,9 +137,7 @@ public class CommandeDAO {
         return lignes;
     }
 
-    /**
-     * Marque une commande comme reçue et met à jour les stocks
-     */
+  
     public boolean marquerCommeRecue(int idCommande) {
         String sql = "UPDATE commande SET statut = 'RECUE', date_reception = ? WHERE id = ?";
         
@@ -166,33 +152,7 @@ public class CommandeDAO {
         return false;
     }
 
-    /**
-     * Récupère les commandes en attente
-     */
-    public List<Commande> getCommandesEnAttente() {
-        List<Commande> commandes = new ArrayList<>();
-        String sql = "SELECT c.*, f.nom as nom_fournisseur FROM commande c " +
-                    "JOIN fournisseur f ON c.id_fournisseur = f.id " +
-                    "WHERE c.statut = 'EN_ATTENTE' " +
-                    "ORDER BY c.date_commande DESC";
-        
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                Commande commande = extraireCommande(rs);
-                commande.setLignesCommande(lireLignesCommande(commande.getId()));
-                commandes.add(commande);
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la lecture des commandes en attente : " + e.getMessage());
-        }
-        return commandes;
-    }
-
-    /**
-     * Extrait un objet Commande depuis un ResultSet
-     */
+    
     private Commande extraireCommande(ResultSet rs) throws SQLException {
         LocalDate dateReception = null;
         Date sqlDateReception = rs.getDate("date_reception");

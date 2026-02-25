@@ -1,6 +1,7 @@
 package com.pharmacie.view;
 
 import com.pharmacie.controller.MedicamentController;
+import com.pharmacie.controller.SessionManager;
 import com.pharmacie.model.Medicament;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -29,10 +30,13 @@ public class MedicamentView {
 
     public void show() {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #f5f5f5;");
+        StyleManager.applyBackgroundStyle(root);
 
         // En-tête
-        HBox header = createHeader();
+        HBox header = StyleManager.createHeader("Gestion des Médicaments", () -> {
+            MainMenuView mainMenu = new MainMenuView(stage);
+            mainMenu.show();
+        });
         root.setTop(header);
 
         // Barre de recherche et boutons
@@ -41,49 +45,30 @@ public class MedicamentView {
 
         // Table
         table = createTable();
-        root.setCenter(table);
+        VBox tableContainer = new VBox(table);
+        tableContainer.setPadding(new Insets(20));
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        root.setCenter(tableContainer);
 
         // Charger les données
         chargerMedicaments();
 
         Scene scene = new Scene(root, 1200, 700);
         stage.setScene(scene);
+        stage.setTitle("Médicaments - SGPA");
         stage.show();
-    }
-
-    private HBox createHeader() {
-        HBox header = new HBox();
-        header.setPadding(new Insets(15, 20, 15, 20));
-        header.setStyle("-fx-background-color: #2196F3;");
-
-        Label titre = new Label("Gestion des Médicaments");
-        titre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
-
-        Button btnRetour = new Button("← Retour");
-        btnRetour.setStyle("-fx-background-color: white; -fx-text-fill: #2196F3;");
-        btnRetour.setOnAction(e -> {
-            MainMenuView mainMenu = new MainMenuView(stage);
-            mainMenu.show();
-        });
-
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-        header.getChildren().addAll(btnRetour, spacer1, titre, spacer2);
-        return header;
     }
 
     private HBox createToolbar() {
         HBox toolbar = new HBox(10);
-        toolbar.setPadding(new Insets(10, 20, 10, 20));
-        toolbar.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;");
+        toolbar.setPadding(new Insets(15, 20, 15, 20));
+        toolbar.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
 
         TextField txtRecherche = new TextField();
         txtRecherche.setPromptText("Rechercher un médicament...");
         txtRecherche.setPrefWidth(300);
+        StyleManager.applyTextFieldStyle(txtRecherche);
         txtRecherche.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal.isEmpty()) {
                 chargerMedicaments();
@@ -93,11 +78,11 @@ public class MedicamentView {
         });
 
         Button btnAjouter = new Button("Ajouter");
-        btnAjouter.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        StyleManager.applyPrimaryButtonStyle(btnAjouter);
         btnAjouter.setOnAction(e -> afficherFormulaireAjout());
 
         Button btnModifier = new Button("Modifier");
-        btnModifier.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white;");
+        StyleManager.applyWarningButtonStyle(btnModifier);
         btnModifier.setOnAction(e -> {
             Medicament selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -108,7 +93,7 @@ public class MedicamentView {
         });
 
         Button btnSupprimer = new Button("Supprimer");
-        btnSupprimer.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        StyleManager.applyDestructiveButtonStyle(btnSupprimer);
         btnSupprimer.setOnAction(e -> {
             Medicament selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -119,17 +104,23 @@ public class MedicamentView {
         });
 
         Button btnActualiser = new Button("Actualiser");
+        StyleManager.applySecondaryButtonStyle(btnActualiser);
         btnActualiser.setOnAction(e -> chargerMedicaments());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        toolbar.getChildren().addAll(txtRecherche, spacer, btnAjouter, btnModifier, btnSupprimer, btnActualiser);
+        toolbar.getChildren().addAll(txtRecherche, spacer);
+        if (SessionManager.getInstance().estPharmacien()) {
+            toolbar.getChildren().addAll(btnAjouter, btnModifier, btnSupprimer);
+        }
+        toolbar.getChildren().add(btnActualiser);
         return toolbar;
     }
 
     private TableView<Medicament> createTable() {
         TableView<Medicament> table = new TableView<>();
+        StyleManager.applyTableStyle(table);
         table.setItems(data);
 
         TableColumn<Medicament, Integer> colId = new TableColumn<>("ID");
@@ -171,6 +162,18 @@ public class MedicamentView {
         TableColumn<Medicament, Boolean> colOrdonnance = new TableColumn<>("Ordonnance");
         colOrdonnance.setCellValueFactory(new PropertyValueFactory<>("necessiteOrdonnance"));
         colOrdonnance.setPrefWidth(100);
+        colOrdonnance.setCellFactory(tc -> new TableCell<Medicament, Boolean>() {
+            @Override
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item ? "OUI" : "NON");
+                    setStyle(item ? "-fx-text-fill: " + StyleManager.DESTRUCTIVE_COLOR + "; -fx-font-weight: bold;" : "-fx-text-fill: " + StyleManager.PRIMARY_COLOR + ";");
+                }
+            }
+        });
 
         table.getColumns().addAll(colId, colNom, colPrincipe, colForme, colDosage, 
                                   colPrix, colStock, colSeuil, colPeremption, colOrdonnance);
@@ -192,6 +195,9 @@ public class MedicamentView {
         Dialog<Medicament> dialog = new Dialog<>();
         dialog.setTitle("Ajouter un médicament");
         dialog.setHeaderText("Nouveau médicament");
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         ButtonType btnValider = new ButtonType("Ajouter", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
@@ -220,6 +226,9 @@ public class MedicamentView {
         Dialog<Medicament> dialog = new Dialog<>();
         dialog.setTitle("Modifier un médicament");
         dialog.setHeaderText("Modification de: " + medicament.getNomCommercial());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
 
         ButtonType btnValider = new ButtonType("Modifier", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnValider, ButtonType.CANCEL);
@@ -254,14 +263,21 @@ public class MedicamentView {
         grid.setPadding(new Insets(20));
 
         TextField txtNom = new TextField(medicament != null ? medicament.getNomCommercial() : "");
+        StyleManager.applyTextFieldStyle(txtNom);
         TextField txtPrincipe = new TextField(medicament != null ? medicament.getPrincipeActif() : "");
+        StyleManager.applyTextFieldStyle(txtPrincipe);
         ComboBox<String> cmbForme = new ComboBox<>(FXCollections.observableArrayList(
             "Comprimé", "Sirop", "Crème", "Gel", "Injectable", "Gélule", "Pommade"));
         cmbForme.setValue(medicament != null ? medicament.getFormeGalenique() : "Comprimé");
+        cmbForme.setStyle("-fx-font-family: '" + StyleManager.FONT_FAMILY + "';");
         TextField txtDosage = new TextField(medicament != null ? medicament.getDosage() : "");
+        StyleManager.applyTextFieldStyle(txtDosage);
         TextField txtPrix = new TextField(medicament != null ? String.valueOf(medicament.getPrixPublic()) : "");
+        StyleManager.applyTextFieldStyle(txtPrix);
         TextField txtStock = new TextField(medicament != null ? String.valueOf(medicament.getStockActuel()) : "0");
+        StyleManager.applyTextFieldStyle(txtStock);
         TextField txtSeuil = new TextField(medicament != null ? String.valueOf(medicament.getSeuilMinimum()) : "10");
+        StyleManager.applyTextFieldStyle(txtSeuil);
         DatePicker dpPeremption = new DatePicker(medicament != null ? medicament.getDatePeremption() : LocalDate.now().plusYears(2));
         CheckBox chkOrdonnance = new CheckBox();
         chkOrdonnance.setSelected(medicament != null && medicament.isNecessiteOrdonnance());
